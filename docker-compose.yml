@@ -1,0 +1,11 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: mercadona_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: mercadona_db
+    ports:
+      - "5432:5432"
