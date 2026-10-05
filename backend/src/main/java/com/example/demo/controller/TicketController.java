@@ -15,14 +15,12 @@ public class TicketController {
     @Autowired
     private TicketRepository ticketRepository;
 
-    // POST: Recibe un ticket desde el móvil y lo guarda en PostgreSQL
     @PostMapping
     public ResponseEntity<Ticket> guardarTicket(@RequestBody Ticket ticket) {
         Ticket ticketGuardado = ticketRepository.save(ticket);
         return ResponseEntity.ok(ticketGuardado);
     }
 
-    // GET: Devuelve todos los tickets de un cliente específico
     @GetMapping("/{clienteId}")
     public ResponseEntity<List<Ticket>> obtenerTicketsPorCliente(@PathVariable String clienteId) {
         List<Ticket> historial = ticketRepository.findByClienteId(clienteId);
