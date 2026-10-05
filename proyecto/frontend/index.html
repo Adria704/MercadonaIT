@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dona, no te abandona</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E4ECE5; --ground:#F4F7F3; --surface:#FFFFFF; --ink:#14241C; --muted:#55665C; --line:#DCE5DD;
+  --brand:#00AB61; --brand-deep:#007A45; --brand-soft:#E0F4E8; --on-brand:#06281A;
+  --accent:#FCB831; --accent-ink:#3A2A00;
+  --paper:#FFFFFF; --paper-ink:#1E1E1C; --paper-muted:#6A6A64; --danger:#B4341A;
+  --display:"Bricolage Grotesque","Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"DM Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#070D0A; --ground:#0F1914; --surface:#17241D; --ink:#EAF2EC; --muted:#9DB0A4; --line:#27382E;
+    --brand:#19C377; --brand-deep:#087F4A; --brand-soft:#143424; --on-brand:#04180F; --paper:#F7F6F0; --danger:#F0A070;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#070D0A; --ground:#0F1914; --surface:#17241D; --ink:#EAF2EC; --muted:#9DB0A4; --line:#27382E;
+  --brand:#19C377; --brand-deep:#087F4A; --brand-soft:#143424; --on-brand:#04180F; --paper:#F7F6F0; --danger:#F0A070;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+input{font:inherit;color:var(--ink)}
+
+.app{height:100%;max-width:430px;margin:0 auto;background:var(--ground);display:flex;flex-direction:column;position:relative;overflow:hidden}
+@media (min-width:600px) and (min-height:720px){
+  body{display:grid;place-items:center}
+  .app{width:430px;height:min(100%,880px);border-radius:34px;border:1px solid var(--line);box-shadow:0 30px 70px -30px rgba(0,60,30,.45)}
+}
+
+/* ---------- Bienvenida ---------- */
+.splash{flex:1;display:flex;flex-direction:column;background:var(--brand);color:#fff;padding:28px 24px 24px;overflow-y:auto}
+.splash .event{font-weight:600;font-size:14px;color:var(--on-brand)}
+.splash .hero{flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 0}
+.splash .name{font-family:var(--display);font-weight:800;font-size:clamp(78px,24vw,104px);line-height:.86;letter-spacing:-.045em}
+.splash .rhyme{font-family:var(--display);font-weight:700;font-size:clamp(36px,11vw,48px);line-height:1;letter-spacing:-.03em;color:var(--on-brand);margin-top:6px;display:block}
+.splash .pitch{margin-top:22px;font-size:18px;line-height:1.4;color:var(--on-brand);max-width:19em;font-weight:500}
+.login{background:var(--surface);color:var(--ink);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.login label{font-weight:700;font-size:15px}
+.login .field{display:flex;gap:8px}
+.login input{flex:1;min-width:0;height:50px;border-radius:14px;border:1.5px solid var(--line);background:var(--ground);padding:0 14px}
+.login .demo{display:flex;flex-wrap:wrap;gap:6px}
+.login .demo button{font-size:14px;font-weight:600;padding:8px 12px;border-radius:999px;background:var(--brand-soft)}
+.login .err{color:var(--danger);font-size:14px;font-weight:600}
+.splash .new{margin-top:12px;text-align:center;font-weight:700;color:var(--on-brand);min-height:44px}
+.splash .fine{font-size:13px;color:var(--on-brand);margin-top:6px;opacity:.85;text-align:center}
+
+.btn{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 20px;border-radius:16px;font-weight:700;font-size:16px;width:100%}
+.btn.yellow{background:var(--accent);color:var(--accent-ink)}
+.btn.green{background:var(--brand-deep);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn[disabled]{opacity:.5;cursor:default}
+.btn.auto{width:auto}
+
+/* ---------- Alta (tipo Pinterest) ---------- */
+.onb{flex:1;display:flex;flex-direction:column;min-height:0}
+.onb-head{padding:22px 22px 12px}
+.onb-head .step{font-size:14px;color:var(--muted);font-weight:600}
+.onb-head h1{font-family:var(--display);font-weight:800;font-size:32px;line-height:1.02;letter-spacing:-.03em;margin-top:6px}
+.onb-head p{color:var(--muted);margin-top:8px}
+.onb-body{flex:1;overflow-y:auto;padding:6px 16px 16px}
+.onb-foot{padding:12px 18px 18px;border-top:1px solid var(--line);display:flex;gap:10px}
+.onb-foot .skip{min-height:52px;padding:0 14px;font-weight:600;color:var(--muted)}
+.masonry{columns:2;column-gap:10px}
+.tile{break-inside:avoid;width:100%;margin-bottom:10px;border-radius:20px;padding:14px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;position:relative;
+  background:color-mix(in srgb,var(--tint) 26%,var(--surface));border:2.5px solid transparent;transition:transform .12s}
+.tile .em{font-size:44px;line-height:1}
+.tile .lb{font-weight:700;font-size:16px;line-height:1.15}
+.tile .ds{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.25}
+.tile.h1{height:126px}.tile.h2{height:158px}.tile.h3{height:190px}
+.tile[aria-pressed="true"]{border-color:var(--brand-deep);background:color-mix(in srgb,var(--tint) 44%,var(--surface))}
+.tile[aria-pressed="true"]::after{content:"";position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;background:var(--brand-deep) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/16px no-repeat}
+.tile:active{transform:scale(.97)}
+.card{background:var(--surface);border-radius:20px;padding:18px;border:1px solid var(--line)}
+.card + .card{margin-top:12px}
+.card h2{font-size:17px;font-weight:700}
+.card .hint{color:var(--muted);font-size:14px;margin-top:2px}
+.card input{width:100%;height:50px;border-radius:14px;border:1.5px solid var(--line);background:var(--ground);padding:0 14px;margin-top:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font-weight:600;font-size:15px}
+.chip[aria-pressed="true"]{background:var(--brand-deep);border-color:var(--brand-deep);color:#fff}
+
+/* ---------- Estructura ---------- */
+.top{display:flex;align-items:center;gap:10px;padding:12px 14px 10px;background:var(--surface);border-bottom:1px solid var(--line)}
+.search{flex:1;display:flex;align-items:center;gap:10px;height:48px;border-radius:24px;background:var(--ground);padding:0 16px;border:1.5px solid transparent}
+.search:focus-within{border-color:var(--brand)}
+.search svg{width:20px;height:20px;color:var(--muted);flex:none}
+.search input{flex:1;min-width:0;border:0;background:transparent;height:100%;outline:none}
+.search input::placeholder{color:var(--muted)}
+.top .wm{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-.04em;color:var(--brand-deep);line-height:1;flex:1}
+.icon-btn{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--ground);position:relative;flex:none}
+.icon-btn svg{width:22px;height:22px}
+.badge{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-size:12px;font-weight:700;display:grid;place-items:center}
+.view{flex:1;min-height:0;display:flex;flex-direction:column}
+.scroll{flex:1;overflow-y:auto;padding:8px 16px 24px}
+.tabs{display:flex;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px 2px}
+.tab{flex:1;min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.tab .ic{display:grid;place-items:center;width:56px;height:32px;border-radius:16px}
+.tab svg{width:23px;height:23px}
+.tab[aria-current="page"]{color:var(--brand-deep)}
+.tab[aria-current="page"] .ic{background:var(--brand-soft)}
+.tab.dona .ic{width:50px;height:50px;border-radius:50%;background:var(--accent);color:var(--accent-ink);margin-top:-22px;border:4px solid var(--surface)}
+.tab.dona[aria-current="page"] .ic{background:var(--brand-deep);color:#fff}
+:root[data-theme="dark"] .tab[aria-current="page"]{color:var(--brand)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tab[aria-current="page"]{color:var(--brand)}}
+
+/* ---------- Inicio ---------- */
+.hello{font-family:var(--display);font-weight:800;font-size:38px;letter-spacing:-.035em;line-height:1;padding:14px 2px 14px}
+.dona-card{background:var(--brand);border-radius:24px;padding:20px;color:#fff;display:flex;flex-direction:column;gap:12px}
+.dona-card .n{font-family:var(--display);font-weight:800;font-size:46px;line-height:.9;letter-spacing:-.045em}
+.dona-card .r{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.03em;color:var(--on-brand);line-height:1}
+.dona-card p{color:var(--on-brand);font-weight:500;font-size:15.5px}
+.dona-card .quick{display:flex;flex-wrap:wrap;gap:6px}
+.dona-card .quick button{background:rgba(255,255,255,.88);color:var(--on-brand);font-weight:600;font-size:14px;padding:8px 12px;border-radius:999px}
+.sec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:24px 2px 10px}
+.sec h2{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.025em}
+.sec p{color:var(--muted);font-size:14px}
+.adapt{color:var(--muted);font-size:13.5px;margin:-4px 2px 10px}
+.hscroll{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 6px;margin:0 -16px;padding-left:16px;padding-right:16px}
+.pcard{flex:none;width:158px;scroll-snap-align:start;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.pcard .ph{height:92px;border-radius:14px;background:var(--brand-soft);display:grid;place-items:center;font-size:46px}
+.pcard .nm{font-weight:700;font-size:15px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em}
+.pcard .why{color:var(--muted);font-size:12.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em}
+.pcard .ft{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto}
+.pcard .pr{font-weight:700;font-size:16px}
+.rows{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.row{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;padding:12px 12px 12px 14px}
+.row + .row{border-top:1px solid var(--line)}
+.thumb{width:48px;height:48px;border-radius:14px;background:var(--brand-soft);display:grid;place-items:center;font-size:26px}
+.row .nm{font-weight:700;font-size:15.5px;line-height:1.2}
+.row .why{color:var(--muted);font-size:13.5px;line-height:1.3;margin-top:2px}
+.row .pr{font-weight:600;font-size:14px;margin-top:3px}
+.add{min-width:44px;min-height:44px;padding:0 14px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:14.5px}
+.add.done{background:var(--brand-soft);color:var(--ink)}
+.empty{padding:18px;color:var(--muted);font-size:15px}
+.skeleton{height:200px;border-radius:20px;background:linear-gradient(90deg,var(--surface),var(--brand-soft),var(--surface));background-size:200% 100%;animation:shimmer 1.2s infinite}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+.placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:30px;color:var(--muted)}
+.placeholder h2{font-family:var(--display);font-weight:800;font-size:28px;color:var(--ink);letter-spacing:-.03em}
+
+/* ---------- Dona (chat) ---------- */
+.chat-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px}
+.chat-head h1{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.04em;color:var(--brand-deep);line-height:1}
+.chat-head span{font-size:14px;color:var(--muted);font-weight:500}
+.chat-head button{font-size:14px;font-weight:600;color:var(--muted);min-height:44px;padding:0 6px}
+.log{flex:1;overflow-y:auto;padding:8px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:11px 15px;border-radius:20px;font-size:16px;white-space:pre-line}
+.msg.me{align-self:flex-end;background:var(--brand-deep);color:#fff;border-bottom-right-radius:6px}
+.msg.dona{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg.err{border-color:var(--danger);color:var(--danger)}
+.understood{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;max-width:100%}
+.understood span{font-size:13px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--brand-soft);color:var(--ink)}
+.sugg{display:flex;flex-direction:column;gap:8px;align-self:stretch;margin-top:2px}
+.sugg button{text-align:left;min-height:46px;padding:10px 15px;border-radius:14px;border:1.5px dashed color-mix(in srgb,var(--brand-deep) 55%,var(--line));font-weight:600;font-size:15px;background:transparent}
+.typing{align-self:flex-start;display:flex;gap:5px;padding:15px 16px;background:var(--surface);border:1px solid var(--line);border-radius:20px;border-bottom-left-radius:6px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:bob 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bob{0%,60%,100%{transform:none;opacity:.45}30%{transform:translateY(-4px);opacity:1}}
+.mini{align-self:stretch}
+.composer{display:flex;gap:8px;padding:10px 12px 12px;background:var(--ground);border-top:1px solid var(--line)}
+.composer input{flex:1;min-width:0;height:50px;border-radius:25px;border:1.5px solid var(--line);background:var(--surface);padding:0 18px}
+.composer input::placeholder{color:var(--muted)}
+.composer button{width:50px;height:50px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.composer button svg{width:22px;height:22px}
+
+/* El ticket: la cesta que propone Dona */
+.ticket{align-self:stretch;position:relative;background:var(--paper);color:var(--paper-ink);font-family:var(--mono);font-size:13.5px;line-height:1.35;
+  padding:18px 14px 14px;margin:4px 4px 16px;border-radius:6px 6px 0 0;filter:drop-shadow(0 6px 10px rgba(0,40,20,.16))}
+.ticket::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;
+  background:linear-gradient(135deg,var(--paper) 4px,transparent 0) 0 0/8px 8px repeat-x,linear-gradient(-135deg,var(--paper) 4px,transparent 0) 0 0/8px 8px repeat-x}
+.ticket.fresh{animation:print 1s cubic-bezier(.2,.7,.2,1) both}
+@keyframes print{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 -20px 0)}}
+.ticket .t-head{text-align:center;padding-bottom:10px;border-bottom:1.5px dashed #BDBDB4}
+.ticket .t-name{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-.04em;color:#007A45;line-height:1}
+.ticket .t-sub{color:var(--paper-muted);font-size:12.5px;margin-top:4px}
+.ticket ul{list-style:none;margin:8px 0;padding:0}
+.ticket li{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:6px;min-height:30px}
+.ticket li .q{color:var(--paper-muted)}
+.ticket li .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ticket li .n small{color:#007A45;font-size:11px;margin-left:4px}
+.ticket li .p{text-align:right;font-weight:500}
+.ticket .t-tot{border-top:1.5px dashed #BDBDB4;padding-top:8px}
+.ticket .t-tot div{display:flex;justify-content:space-between;padding:1px 0}
+.ticket .t-tot .big{font-size:18px;font-weight:500;padding-top:4px;padding-bottom:4px}
+.ticket .t-tot .left{color:#007A45}
+.ticket .t-note{font-family:var(--body);font-size:12.5px;color:var(--paper-muted);margin-top:10px;line-height:1.35}
+.ticket .t-act{display:flex;gap:8px;margin-top:12px;font-family:var(--body)}
+.ticket .t-act .btn{min-height:46px;font-size:14.5px;border-radius:12px;white-space:nowrap;padding:0 12px}
+.ticket .t-act .ghost{color:var(--paper-ink);border-color:#CFCFC6;flex:0 0 auto;width:auto;padding:0 14px}
+
+/* ---------- Cuenta ---------- */
+.kv{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.kv span{font-size:14px;font-weight:600;padding:6px 12px;border-radius:999px;background:var(--brand-soft)}
+.kv span.no{background:color-mix(in srgb,var(--danger) 14%,var(--surface))}
+.tk{padding:10px 0;border-top:1px solid var(--line);font-size:14.5px}
+.tk:first-of-type{border-top:0}
+.tk b{display:flex;justify-content:space-between}
+.tk small{color:var(--muted)}
+
+/* ---------- Wrapped (historias) ---------- */
+.stories{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;color:#fff;background:var(--brand-deep)}
+.stories.k1{background:var(--accent);color:var(--accent-ink)}
+.stories.k2{background:#0E2A1D;color:#fff}
+.stories.k3{background:var(--brand);color:var(--on-brand)}
+.stories .bars{display:flex;gap:4px;padding:14px 14px 0}
+.stories .bars i{flex:1;height:4px;border-radius:2px;background:currentColor;opacity:.3}
+.stories .bars i.on{opacity:1}
+.stories .x{position:absolute;top:26px;right:10px;width:48px;height:48px;display:grid;place-items:center;z-index:3}
+.stories .x svg{width:24px;height:24px}
+.story{flex:1;display:flex;flex-direction:column;justify-content:center;padding:30px 28px;animation:pop .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes pop{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.story .pre{font-size:19px;font-weight:600}
+.story .big{font-family:var(--display);font-weight:800;font-size:clamp(64px,21vw,92px);line-height:.9;letter-spacing:-.045em;margin:10px 0 16px;overflow-wrap:anywhere}
+.story .big.long{font-size:clamp(38px,11vw,52px);line-height:.98;overflow-wrap:break-word;hyphens:auto}
+.story .post{font-size:19px;line-height:1.35;font-weight:500;max-width:17em}
+.stories .tap{position:absolute;top:70px;bottom:0;width:50%;z-index:2}
+.stories .tap.prev{left:0}.stories .tap.next{right:0}
+.stories .sig{padding:0 28px 26px;font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-.03em}
+
+/* ---------- Cesta (hoja) y aviso ---------- */
+.scrim{position:absolute;inset:0;background:rgba(5,20,12,.5);z-index:20;display:flex;align-items:flex-end}
+.sheet{width:100%;max-height:84%;background:var(--surface);border-radius:26px 26px 0 0;display:flex;flex-direction:column;animation:up .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.sheet header{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 8px}
+.sheet header h2{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-.03em}
+.sheet .list{overflow-y:auto;padding:0 6px}
+.sheet footer{padding:14px 18px 18px;border-top:1px solid var(--line)}
+.sheet .tot{display:flex;justify-content:space-between;font-weight:700;font-size:19px;margin-bottom:12px}
+.qty{display:flex;align-items:center;gap:8px;font-weight:700}
+.qty button{width:40px;height:40px;border-radius:50%;background:var(--brand-soft);font-size:20px;font-weight:700}
+.toast{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:11px 18px;border-radius:999px;font-weight:600;font-size:14.5px;z-index:40;max-width:90%;text-align:center;animation:up .25s}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div id="live" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)"></div>
+
+<script>
+/* =====================================================================
+   CONEXIÓN CON LA API
+   Por defecto usa el mismo servidor que sirve la página:
+     http://localhost:8080  -> backend Spring Boot (lo normal)
+     http://localhost:8001  -> servicio de IA en "modo sin backend Java" (plan B)
+   Para apuntar a otro sitio: index.html?api=http://localhost:8080/api
+   ===================================================================== */
+const API = (() => {
+  const q = new URLSearchParams(location.search).get('api');
+  if (q) return q.replace(/\/$/, '');
+  return location.protocol.startsWith('http') ? location.origin + '/api' : 'http://localhost:8080/api';
+})();
+
+async function http(path, opts = {}) {
+  const r = await fetch(API + path, {headers: {'Content-Type': 'application/json'}, ...opts});
+  let data = null;
+  try { data = await r.json(); } catch (e) { /* sin cuerpo JSON */ }
+  if (!r.ok) throw new Error((data && (data.error || data.detail)) || `Error ${r.status}`);
+  return data;
+}
+const post = (path, body) => http(path, {method: 'POST', body: JSON.stringify(body || {})});
+const api = {
+  login: telefono => post('/clientes/login', {telefono}),
+  crear: datos => post('/clientes', datos),
+  intereses: () => http('/onboarding/intereses'),
+  reco: id => http(`/clientes/${id}/recomendaciones?n=8`),
+  buscar: q => http(`/productos?q=${encodeURIComponent(q)}`),
+  chat: (id, mensaje) => post(`/clientes/${id}/chat`, {mensaje}),
+  reset: id => post(`/clientes/${id}/chat/reset`, {}),
+  cesta: (id, pedido) => post(`/clientes/${id}/cesta`, pedido),
+  wrapped: id => http(`/clientes/${id}/wrapped?llm=false`),
+  perfil: id => http(`/clientes/${id}/perfil`),
+  tickets: id => http(`/clientes/${id}/tickets?limite=5`),
+  comprar: ticket => post('/tickets', ticket),
+};
+
+/* =====================================================================
+   UTILIDADES
+   ===================================================================== */
+const $app = document.getElementById('app'), $live = document.getElementById('live');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n || 0).toFixed(2).replace('.', ',') + ' €';
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* almacenamiento no disponible */ } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { /* idem */ } },
+};
+const EMOJI = [
+  ['plátano','🍌'],['manzana','🍎'],['naranja','🍊'],['mandarina','🍊'],['sandía','🍉'],['melón','🍈'],['fresón','🍓'],['limón','🍋'],
+  ['aguacate','🥑'],['tomate frito','🥫'],['tomate','🍅'],['lechuga','🥬'],['pepino','🥒'],['cebolla','🧅'],['patatas fritas','🍟'],['patata','🥔'],
+  ['pimiento','🫑'],['judía','🫛'],['calabacín','🥒'],['pollo','🍗'],['pavo','🥓'],['jamón','🍖'],['chorizo','🌭'],['carne','🥩'],['añojo','🥩'],
+  ['cerdo','🥩'],['conejo','🍖'],['salmón','🐟'],['merluza','🐟'],['atún','🐟'],['langostino','🦐'],['gamba','🦐'],['huevo','🥚'],
+  ['bebida de avena','🥛'],['leche','🥛'],['yogur','🥣'],['queso','🧀'],['mantequilla','🧈'],['helado','🍨'],['croissant','🥐'],['buñuelo','🍩'],
+  ['pan','🍞'],['arroz inflado','🥣'],['arroz','🍚'],['macarrones','🍝'],['espagueti','🍝'],['garbanzo','🫘'],['lenteja','🫘'],['aceite','🫒'],
+  ['aceitunas','🫒'],['colorante','🥘'],['caldo','🍲'],['copos','🥣'],['café','☕'],['chocolate','🍫'],['turrón','🍬'],['frutos secos','🥜'],
+  ['hummus','🥙'],['gazpacho','🍅'],['ensalada','🥗'],['pizza','🍕'],['tortilla','🥘'],['agua','💧'],['cerveza','🍺'],['refresco','🥤'],
+  ['zumo','🧃'],['cava','🍾'],['vino','🍷'],['detergente','🧺'],['lavavajillas','🧽'],['papel','🧻'],['champú','🧴'],['crema','🧴'],
+  ['pasta de dientes','🪥'],['desodorante','🧴'],
+];
+const SECCION_EMOJI = {'Fruta y verdura':'🥬','Carne':'🥩','Pescado':'🐟','Charcutería':'🥓','Lácteos y huevos':'🥛','Panadería':'🥖',
+  'Despensa':'🥫','Listos para comer':'🥗','Bebidas':'🧃','Congelados':'🧊','Limpieza':'🧽','Higiene':'🧴'};
+function emoji(p) {
+  const n = (p.nombre || '').toLowerCase();
+  for (const [k, e] of EMOJI) if (n.includes(k)) return e;
+  return SECCION_EMOJI[p.seccion] || '🛒';
+}
+const TINTS = ['#E4572E','#00AB61','#8B5E3C','#FCB831','#2E86AB','#7B6CF6','#D7263D','#3A7D44','#C9558B','#3FA7D6','#E86A92','#A07855'];
+const HEIGHTS = ['h3','h2','h1','h2','h3','h1','h2','h2','h1','h3','h2','h1'];
+const TOOL_LABEL = {
+  preparar_cesta: 'Ha preparado tu cesta', recomendaciones: 'Ha mirado tus gustos', resumen_compras: 'Ha sumado tus compras',
+  historial_producto: 'Ha revisado tu historial', ultimos_tickets: 'Ha abierto tus tickets', mi_wrapped: 'Ha preparado tu resumen',
+  reciclaje: 'Ha consultado el reciclaje', actualizar_gustos: 'Ha guardado tus gustos', buscar_productos: 'Ha buscado en el catálogo',
+};
+const ALERGENO = {gluten:'Gluten', lactosa:'Lactosa', huevo:'Huevo', pescado:'Pescado', crustaceos:'Crustáceos', frutos_secos:'Frutos secos', sesamo:'Sésamo'};
+
+const IC = {
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>',
+  grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>',
+  dona:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  cart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.5 11h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+  send:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+};
+
+/* =====================================================================
+   ESTADO
+   ===================================================================== */
+const S = {
+  cliente: store.get('dona_cliente'), screen: 'welcome', tab: 'inicio', loginErr: '', busy: false,
+  reco: null, recoErr: '', q: '', results: null,
+  msgs: [], typing: false, cart: new Map(), sheet: false, stories: null, story: 0,
+  perfil: null, tickets: null, intereses: null,
+  onb: {tastes: new Set(), restr: new Set(), alerg: new Set(), nombre: '', telefono: ''},
+};
+if (S.cliente) S.screen = 'app';
+const cartCount = () => [...S.cart.values()].reduce((a, b) => a + b.q, 0);
+const cartTotal = () => [...S.cart.values()].reduce((a, b) => a + b.p.precio * b.q, 0);
+
+function toast(text) {
+  $live.textContent = text;
+  document.querySelectorAll('.toast').forEach(n => n.remove());
+  const n = document.createElement('div'); n.className = 'toast'; n.textContent = text; $app.appendChild(n);
+  toast.node = n;
+  clearTimeout(toast.t); toast.t = setTimeout(() => { n.remove(); toast.node = null; }, 2400);
+}
+function addToCart(p, q = 1) {
+  const cur = S.cart.get(p.id);
+  S.cart.set(p.id, {p, q: (cur ? cur.q : 0) + q});
+}
+
+/* =====================================================================
+   PANTALLAS
+   ===================================================================== */
+function vWelcome() {
+  return `<section class="splash">
+    <p class="event">Hackathon Mercadona IT</p>
+    <div class="hero">
+      <h1><span class="name">Dona,</span><span class="rhyme">no te abandona.</span></h1>
+      <p class="pitch">Tu asistente de compra: aprende de tus tickets, te recomienda y llena la cesta con tu presupuesto.</p>
+    </div>
+    <form class="login" id="login-form">
+      <label for="tel">Entra con tu teléfono</label>
+      <div class="field"><input id="tel" inputmode="tel" autocomplete="tel" placeholder="600 111 222">
+        <button class="btn green auto" type="submit" ${S.busy ? 'disabled' : ''}>Entrar</button></div>
+      <div class="demo" aria-label="Clientes de demo">
+        <button type="button" data-a="demo" data-t="600111222">Laura · 1 año de compras</button>
+        <button type="button" data-a="demo" data-t="600333444">Álex · estudiante</button>
+        <button type="button" data-a="demo" data-t="600555666">Carmen · cuenta nueva</button>
+      </div>
+      ${S.loginErr ? `<p class="err" role="alert">${esc(S.loginErr)}</p>` : ''}
+    </form>
+    <button class="new" data-a="onb-start">¿Aún no tienes cuenta? Créala</button>
+    <p class="fine">Demo con catálogo, precios y tickets de ejemplo.</p>
+  </section>`;
+}
+
+function vOnb1() {
+  const n = S.onb.tastes.size, list = S.intereses ? S.intereses.intereses : [];
+  return `<section class="onb">
+    <div class="onb-head"><p class="step">Paso 1 de 2</p><h1>¿Qué te apetece ver por casa?</h1><p>Toca lo que va contigo. Con tres ya nos entendemos.</p></div>
+    <div class="onb-body">${list.length ? `<div class="masonry">${list.map((t, i) => `
+      <button class="tile ${HEIGHTS[i % HEIGHTS.length]}" style="--tint:${TINTS[i % TINTS.length]}" aria-pressed="${S.onb.tastes.has(t.id)}" data-a="taste" data-id="${esc(t.id)}">
+        <span class="em" aria-hidden="true">${esc(t.emoji)}</span><span><span class="lb">${esc(t.titulo)}</span><span class="ds" style="display:block">${esc(t.descripcion)}</span></span></button>`).join('')}</div>`
+      : '<div class="skeleton"></div>'}</div>
+    <div class="onb-foot"><button class="skip" data-a="onb-cancel">Atrás</button>
+      <button class="btn green" data-a="onb-next" ${n < 3 ? 'disabled' : ''}>${n < 3 ? `Elige ${3 - n} más` : 'Continuar'}</button></div>
+  </section>`;
+}
+
+function vOnb2() {
+  const o = S.onb, i = S.intereses || {restricciones: [], alergenos: []};
+  return `<section class="onb">
+    <div class="onb-head"><p class="step">Paso 2 de 2</p><h1>Cuéntanos un poco de ti</h1><p>Dona lo tendrá en cuenta siempre, aunque no se lo repitas.</p></div>
+    <div class="onb-body">
+      <div class="card"><h2>Tu nombre</h2><input id="onb-nombre" value="${esc(o.nombre)}" autocomplete="given-name" placeholder="Pepa"></div>
+      <div class="card"><h2>Tu teléfono</h2><p class="hint">Con él asociamos tus tickets digitales.</p><input id="onb-tel" value="${esc(o.telefono)}" inputmode="tel" placeholder="611 222 333"></div>
+      <div class="card"><h2>¿Seguís alguna dieta?</h2>
+        <div class="chips">${i.restricciones.map(r => `<button class="chip" aria-pressed="${o.restr.has(r.id)}" data-a="restr" data-id="${esc(r.id)}">${esc(r.titulo)}</button>`).join('')}</div></div>
+      <div class="card"><h2>¿Alguna alergia o intolerancia?</h2><p class="hint">Dona nunca te propondrá nada que la contenga, ni con trazas.</p>
+        <div class="chips">${i.alergenos.map(a => `<button class="chip" aria-pressed="${o.alerg.has(a)}" data-a="alerg" data-id="${esc(a)}">${esc(ALERGENO[a] || a)}</button>`).join('')}</div></div>
+      ${S.loginErr ? `<p class="err" role="alert" style="color:var(--danger);font-weight:600;margin:12px 4px">${esc(S.loginErr)}</p>` : ''}
+    </div>
+    <div class="onb-foot"><button class="skip" data-a="onb-back">Atrás</button><button class="btn green" data-a="onb-create" ${S.busy ? 'disabled' : ''}>Crear mi cuenta</button></div>
+  </section>`;
+}
+
+function vShell() {
+  const c = cartCount();
+  const tab = (id, label, icon, extra = '') => `<button class="tab ${extra}" data-a="tab" data-id="${id}" ${S.tab === id ? 'aria-current="page"' : ''}><span class="ic">${icon}</span><span>${label}</span></button>`;
+  const header = S.tab === 'inicio'
+    ? `<label class="search">${IC.search}<input id="q" type="search" placeholder="Buscar productos" value="${esc(S.q)}" aria-label="Buscar productos"></label>`
+    : `<span class="wm">${{categorias: 'Categorías', dona: 'Dona', listas: 'Listas', cuenta: 'Cuenta'}[S.tab]}</span>`;
+  return `<header class="top">${header}
+      <button class="icon-btn" data-a="open-cart" aria-label="Mi cesta, ${c} productos">${IC.cart}${c ? `<span class="badge">${c}</span>` : ''}</button></header>
+    <div class="view" id="view">${S.tab === 'inicio' ? vHome() : S.tab === 'dona' ? vChat() : S.tab === 'cuenta' ? vAccount() : vPlaceholder()}</div>
+    <nav class="tabs" aria-label="Secciones">${tab('inicio', 'Inicio', IC.home)}${tab('categorias', 'Categorías', IC.grid)}${tab('dona', 'Dona', IC.dona, 'dona')}${tab('listas', 'Listas', IC.list)}${tab('cuenta', 'Cuenta', IC.user)}</nav>
+    ${S.sheet ? vCart() : ''}${S.stories ? vStory() : ''}`;
+}
+
+function vPlaceholder() {
+  const t = S.tab === 'categorias' ? 'Categorías' : 'Listas';
+  return `<div class="placeholder"><h2>${t}</h2><p>Esta sección no forma parte de la demo.</p>
+    <button class="btn yellow auto" data-a="tab" data-id="dona" style="margin-top:12px">Pregúntale a Dona</button></div>`;
+}
+
+/* ---------- Inicio ---------- */
+function pcard(p, why) {
+  const inCart = S.cart.has(p.id);
+  return `<article class="pcard"><div class="ph" aria-hidden="true">${emoji(p)}</div>
+    <h3 class="nm">${esc(p.nombre)}</h3><p class="why">${esc(why || p.motivo || p.seccion || '')}</p>
+    <div class="ft"><span class="pr">${fmt(p.precio)}</span>
+      <button class="add ${inCart ? 'done' : ''}" data-a="add" data-id="${esc(p.id)}" aria-label="Añadir ${esc(p.nombre)}">${inCart ? '✓' : '+'}</button></div></article>`;
+}
+function row(p, why) {
+  const inCart = S.cart.has(p.id);
+  return `<div class="row"><div class="thumb" aria-hidden="true">${emoji(p)}</div>
+    <div><div class="nm">${esc(p.nombre)}</div>${why ? `<div class="why">${esc(why)}</div>` : ''}<div class="pr">${fmt(p.precio)}</div></div>
+    <button class="add ${inCart ? 'done' : ''}" data-a="add" data-id="${esc(p.id)}">${inCart ? 'Añadido' : 'Añadir'}</button></div>`;
+}
+function vHome() {
+  if (S.q.trim()) {
+    const r = S.results;
+    return `<div class="scroll" id="scroll"><div class="sec"><h2>Resultados</h2><p>${r ? r.length : '…'} productos</p></div>
+      ${r ? (r.length ? `<div class="rows">${r.map(p => row(p, p.seccion)).join('')}</div>` : '<p class="empty">No hay productos con ese nombre.</p>') : '<div class="skeleton"></div>'}</div>`;
+  }
+  const r = S.reco, nombre = S.cliente ? S.cliente.nombre : '';
+  const sec = (titulo, sub, list) => list && list.length
+    ? `<div class="sec"><h2>${titulo}</h2><p>${sub}</p></div><div class="hscroll">${list.map(p => pcard(p)).join('')}</div>` : '';
+  return `<div class="scroll" id="scroll">
+    <h1 class="hello">Hola, ${esc(nombre)}</h1>
+    <section class="dona-card">
+      <div><div class="n">Dona,</div><div class="r">no te abandona.</div></div>
+      <p>Dile cuánto quieres gastar, para quién y qué no podéis comer. Ella llena la cesta.</p>
+      <div class="quick">
+        <button data-a="ask" data-t="30 € para una persona celíaca y dos veganas">30 € para 3, una celíaca</button>
+        <button data-a="ask" data-t="¿Qué me recomiendas?">¿Qué me recomiendas?</button>
+      </div>
+      <button class="btn yellow" data-a="tab" data-id="dona">Hablar con Dona</button>
+    </section>
+    ${S.recoErr ? `<p class="empty">No se han podido cargar tus recomendaciones: ${esc(S.recoErr)}</p>` : !r ? '<div class="skeleton" style="margin-top:24px"></div>' : `
+      ${sec('Para ti', 'Según tus gustos y tus compras', r.para_ti)}
+      <p class="adapt">${esc(r.adaptacion ? r.adaptacion.mensaje : '')}</p>
+      ${sec('Lo de siempre', 'Lo que más repites', r.lo_de_siempre)}
+      ${sec('Descubre', 'Cosas que aún no has probado', r.descubre)}`}
+  </div>`;
+}
+
+/* ---------- Dona (chat con la IA) ---------- */
+const STARTERS = ['30 € para una persona celíaca y dos veganas', '¿Qué me recomiendas?', '¿Cuánto llevo gastado este mes?', '¿Cuándo compré café la última vez?', 'Enséñame mi Wrapped'];
+function vChat() {
+  return `<div class="chat-head"><div><h1>Dona</h1><span>no te abandona</span></div>
+      <button data-a="reset">Nueva conversación</button></div>
+    <div class="log" id="log" aria-live="polite">${vLog()}</div>
+    <form class="composer" id="composer" autocomplete="off">
+      <input id="inp" type="text" enterkeyhint="send" aria-label="Escribe a Dona" placeholder="30 € para dos, sin lactosa">
+      <button type="submit" aria-label="Enviar">${IC.send}</button></form>`;
+}
+function vLog() {
+  let h = S.msgs.map((m, i) => {
+    if (m.who === 'me') return `<div class="msg me">${esc(m.text)}</div>`;
+    let out = `<div class="msg dona ${m.error ? 'err' : ''}">${esc(m.text)}</div>`;
+    if (m.tools && m.tools.length) out += `<div class="understood">${m.tools.map(t => `<span>${esc(t)}</span>`).join('')}</div>`;
+    if (m.cesta) out += vTicket(m, i);
+    if (m.cards && m.cards.length) out += `<div class="rows mini">${m.cards.slice(0, 5).map(p => row(p, p.motivo || '')).join('')}</div>`;
+    if (m.wrapped) out += `<div class="sugg"><button data-a="wrapped">Ver mi Wrapped en pantalla completa</button></div>`;
+    return out;
+  }).join('');
+  if (S.msgs.length <= 1 && !S.typing) h += `<div class="sugg">${STARTERS.map(s => `<button data-a="say" data-t="${esc(s)}">${esc(s)}</button>`).join('')}</div>`;
+  if (S.typing) h += `<div class="typing" aria-label="Dona está pensando"><i></i><i></i><i></i></div>`;
+  return h;
+}
+function vTicket(m, i) {
+  const c = m.cesta, fresh = m.fresh; m.fresh = false;
+  const dietas = [...(c.restricciones || []).map(r => r.replace('_', ' ')), ...(c.alergias || []).map(a => 'sin ' + (ALERGENO[a] || a).toLowerCase())];
+  return `<div class="ticket${fresh ? ' fresh' : ''}">
+    <div class="t-head"><div class="t-name">Dona</div><div class="t-sub">Cesta para ${c.personas} · ${new Date().toLocaleDateString('es-ES')}</div></div>
+    <ul>${c.lineas.map(l => `<li><span class="q">${l.cantidad}x</span><span class="n">${esc(l.nombre)}${l.habitual ? '<small>habitual</small>' : ''}</span><span class="p">${fmt(l.subtotal).replace(' €', '')}</span></li>`).join('')}</ul>
+    <div class="t-tot"><div><span>Presupuesto</span><span>${fmt(c.presupuesto)}</span></div>
+      <div class="big"><span>Total</span><span>${fmt(c.total)}</span></div>
+      <div class="left"><span>Te sobran</span><span>${fmt(c.sobra)}</span></div></div>
+    <p class="t-note">${dietas.length ? `Apta para: ${esc(dietas.join(', '))}. ${esc(c.nota || '')}` : 'Elegida por tus gustos, tus compras y la variedad.'}</p>
+    <div class="t-act"><button class="btn yellow" data-a="add-basket" data-m="${i}" ${m.added ? 'disabled' : ''}>${m.added ? 'Añadida a tu cesta' : 'Añadir a mi cesta'}</button>
+      <button class="btn ghost" data-a="again" data-m="${i}">Otra propuesta</button></div>
+  </div>`;
+}
+function refreshLog() {
+  const log = document.getElementById('log'); if (!log) return;
+  log.innerHTML = vLog();
+  const last = S.msgs[S.msgs.length - 1];
+  if (last && last.cesta) {  // deja a la vista la petición y el principio del ticket
+    const replies = log.querySelectorAll('.msg.dona'); let el = replies[replies.length - 1];
+    if (el && el.previousElementSibling && el.previousElementSibling.classList.contains('me')) el = el.previousElementSibling;
+    if (el) { log.scrollTop = el.offsetTop - log.offsetTop - 6; return; }
+  }
+  log.scrollTop = log.scrollHeight;
+}
+function greet() {
+  if (!S.msgs.length) S.msgs.push({who: 'dona', text: `Hola, ${S.cliente.nombre}. Pídeme una cesta con presupuesto, pregúntame por tus compras o dime qué te gusta y qué no.`});
+}
+async function say(text) {
+  text = (text || '').trim(); if (!text || S.typing) return;
+  if (/wrapped|mi año|resumen del año/i.test(text)) { S.msgs.push({who: 'me', text}); refreshLog(); return openWrapped(true); }
+  S.msgs.push({who: 'me', text}); S.typing = true; refreshLog();
+  try {
+    const r = await api.chat(S.cliente.id, text);
+    const herramientas = (r.traza || []).filter(t => t.tipo === 'herramienta');
+    const cestaPaso = herramientas.find(t => t.cesta);
+    S.msgs.push({
+      who: 'dona', text: r.respuesta,
+      tools: [...new Set(herramientas.map(t => TOOL_LABEL[t.nombre] || t.nombre))],
+      cards: herramientas.flatMap(t => t.tarjetas || []),
+      cesta: cestaPaso ? cestaPaso.cesta : null, pedido: cestaPaso ? cestaPaso.argumentos : null, fresh: true,
+      wrapped: herramientas.some(t => t.nombre === 'mi_wrapped'),
+    });
+    if (herramientas.some(t => t.nombre === 'actualizar_gustos')) S.reco = null;  // las recomendaciones cambiarán
+  } catch (e) {
+    S.msgs.push({who: 'dona', text: `No he podido responder: ${e.message}`, error: true});
+  }
+  S.typing = false; refreshLog();
+}
+async function otraPropuesta(i) {
+  const m = S.msgs[i]; if (!m || !m.cesta || S.typing) return;
+  const p = m.pedido || {};
+  S.typing = true; refreshLog();
+  try {
+    const r = await api.cesta(S.cliente.id, {presupuesto: m.cesta.presupuesto, personas: m.cesta.personas,
+      restricciones: p.restricciones || m.cesta.restricciones || [], alergias: p.alergias || m.cesta.alergias || [], variante: (m.cesta.variante || 0) + 1});
+    S.msgs.push({who: 'dona', text: 'Aquí tienes otra opción con el mismo presupuesto.', cesta: r.cesta, pedido: p, fresh: true});
+  } catch (e) {
+    S.msgs.push({who: 'dona', text: `No he podido preparar otra cesta: ${e.message}`, error: true});
+  }
+  S.typing = false; refreshLog();
+}
+
+/* ---------- Wrapped ---------- */
+async function openWrapped(fromChat) {
+  try {
+    const w = await api.wrapped(S.cliente.id);
+    if (!w.tarjetas || !w.tarjetas.length) {
+      if (fromChat) { S.msgs.push({who: 'dona', text: 'Aún no tienes compras suficientes para tu Wrapped. ¡Vuelve cuando hayas hecho alguna!'}); refreshLog(); }
+      else toast('Aún no hay compras para tu Wrapped');
+      return;
+    }
+    const st = [{pre: 'Así ha sido', big: w.periodo.replace(/^tu /, ''), post: 'en el súper. Toca para seguir.', long: true}];
+    w.tarjetas.forEach(t => {
+      const num = (t.texto.match(/\d+(?:[.,]\d+)?\s?%?/) || [null])[0];
+      st.push(num ? {pre: t.titulo, big: num.trim(), post: t.texto} : {pre: '', big: t.titulo, post: t.texto, long: true});
+    });
+    if (w.tarjeta_privada) st.push({pre: 'Solo para ti', big: (w.tarjeta_privada.texto.match(/[\d.,]+\s?€/) || ['—'])[0], post: w.tarjeta_privada.texto + ' Esta tarjeta no se comparte.'});
+    if (fromChat) { S.msgs.push({who: 'dona', text: w.titular, wrapped: true}); refreshLog(); }
+    S.stories = st; S.story = 0; render();
+  } catch (e) { toast('No se ha podido cargar tu Wrapped'); }
+}
+function vStory() {
+  const s = S.stories[S.story], k = S.story % 4;
+  return `<section class="stories k${k}" role="dialog" aria-label="Tu Wrapped">
+    <div class="bars">${S.stories.map((_, i) => `<i class="${i <= S.story ? 'on' : ''}"></i>`).join('')}</div>
+    <button class="x" data-a="story-close" aria-label="Cerrar">${IC.x}</button>
+    <button class="tap prev" data-a="story-prev" aria-label="Anterior"></button><button class="tap next" data-a="story-next" aria-label="Siguiente"></button>
+    <div class="story" key="${S.story}">${s.pre ? `<p class="pre">${esc(s.pre)}</p>` : ''}<p class="big ${s.long || String(s.big).length > 7 ? 'long' : ''}">${esc(s.big)}</p><p class="post">${esc(s.post)}</p></div>
+    <p class="sig">Dona</p></section>`;
+}
+
+/* ---------- Cuenta ---------- */
+function vAccount() {
+  const p = S.perfil, c = S.cliente, titles = {};
+  if (S.intereses) S.intereses.intereses.forEach(t => { titles[t.id] = `${t.emoji} ${t.titulo}`; });
+  if (S.intereses) S.intereses.restricciones.forEach(r => { titles[r.id] = r.titulo; });
+  const pref = p && p.preferencias;
+  return `<div class="scroll">
+    <div class="card"><h2>${esc(c.nombre)}</h2><p class="hint">Teléfono ${esc(c.telefono || '')} · cliente ${esc(c.id)}</p></div>
+    <div class="card"><h2>Esto es lo que sé de ti</h2><p class="hint">Puedes cambiarlo diciéndoselo a Dona ("no me gusta el pescado").</p>
+      ${!p ? '<div class="skeleton" style="height:80px;margin-top:10px"></div>' : `
+        <div class="kv">${Object.keys(pref.intereses).map(k => `<span>${esc(titles[k] || k)}</span>`).join('') || '<span>Sin gustos elegidos</span>'}</div>
+        ${pref.restricciones.length || pref.alergias.length ? `<div class="kv">${pref.restricciones.map(r => `<span class="no">${esc(titles[r] || r)}</span>`).join('')}${pref.alergias.map(a => `<span class="no">Sin ${esc((ALERGENO[a] || a).toLowerCase())}</span>`).join('')}</div>` : ''}
+        <p class="hint" style="margin-top:10px">${p.tickets_guardados} tickets guardados · ${pref.no_me_gusta.length} productos descartados</p>`}
+    </div>
+    <div class="card"><h2>Tus últimas compras</h2>
+      ${!S.tickets ? '<div class="skeleton" style="height:80px;margin-top:10px"></div>' : S.tickets.length ? S.tickets.map(t => `
+        <div class="tk"><b><span>${new Date(t.fecha).toLocaleDateString('es-ES', {weekday: 'long', day: 'numeric', month: 'long'})}</span><span>${fmt(t.total)}</span></b>
+        <small>${esc(t.lineas.slice(0, 4).map(l => l.nombre).join(', '))}${t.lineas.length > 4 ? '…' : ''}</small></div>`).join('') : '<p class="hint">Aún no tienes compras.</p>'}
+    </div>
+    <div class="card"><button class="btn yellow" data-a="wrapped">Ver mi Wrapped</button>
+      <button class="btn ghost" data-a="logout" style="margin-top:10px">Cerrar sesión</button></div>
+  </div>`;
+}
+
+/* ---------- Cesta ---------- */
+function vCart() {
+  const items = [...S.cart.values()];
+  return `<div class="scrim" data-a="close-cart"><section class="sheet" role="dialog" aria-label="Mi cesta" data-stop="1">
+    <header><h2>Mi cesta</h2><button class="icon-btn" data-a="close-cart" aria-label="Cerrar">${IC.x}</button></header>
+    <div class="list">${items.length ? items.map(({p, q}) => `<div class="row"><div class="thumb" aria-hidden="true">${emoji(p)}</div>
+        <div><div class="nm">${esc(p.nombre)}</div><div class="pr">${fmt(p.precio * q)}</div></div>
+        <div class="qty"><button data-a="qty" data-id="${esc(p.id)}" data-d="-1" aria-label="Quitar uno">−</button>${q}<button data-a="qty" data-id="${esc(p.id)}" data-d="1" aria-label="Añadir uno">+</button></div></div>`).join('')
+      : '<p class="empty">Tu cesta está vacía. Pídele una a Dona.</p>'}</div>
+    ${items.length ? `<footer><div class="tot"><span>Total</span><span>${fmt(cartTotal())}</span></div>
+      <button class="btn green" data-a="checkout" ${S.busy ? 'disabled' : ''}>Confirmar compra</button>
+      <p class="hint" style="text-align:center;margin-top:8px;color:var(--muted);font-size:13px">Se guarda como ticket digital y Dona aprende de ella.</p></footer>` : ''}
+  </section></div>`;
+}
+
+/* =====================================================================
+   RENDER Y CARGA DE DATOS
+   ===================================================================== */
+function render() {
+  $app.innerHTML = S.screen === 'welcome' ? vWelcome() : S.screen === 'onb1' ? vOnb1() : S.screen === 'onb2' ? vOnb2() : vShell();
+  if (toast.node) $app.appendChild(toast.node);  // el aviso sobrevive al repintado
+  if (S.screen === 'app' && S.tab === 'dona') refreshLog();
+  load();
+}
+let loading = {};
+async function once(key, fn) {
+  if (loading[key]) return; loading[key] = true;
+  try { await fn(); } finally { loading[key] = false; }
+}
+function load() {
+  if (S.screen === 'onb1' && !S.intereses) once('int', async () => { S.intereses = await api.intereses(); render(); });
+  if (S.screen !== 'app') return;
+  if (S.tab === 'inicio' && !S.reco && !S.recoErr) once('reco', async () => {
+    try { S.reco = await api.reco(S.cliente.id); } catch (e) { S.recoErr = e.message; }
+    if (S.tab === 'inicio' && !S.q) render();
+  });
+  if (S.tab === 'cuenta') {
+    if (!S.intereses) once('int', async () => { S.intereses = await api.intereses(); render(); });
+    if (!S.perfil) once('perfil', async () => { try { S.perfil = await api.perfil(S.cliente.id); } catch (e) { S.perfil = null; } render(); });
+    if (!S.tickets) once('tickets', async () => { try { S.tickets = await api.tickets(S.cliente.id); } catch (e) { S.tickets = []; } render(); });
+  }
+}
+async function entrar(telefono) {
+  S.busy = true; S.loginErr = ''; render();
+  try {
+    const c = await api.login(telefono.replace(/\s+/g, ''));
+    S.cliente = {id: c.id, nombre: c.nombre, telefono: c.telefono};
+    store.set('dona_cliente', S.cliente); S.screen = 'app'; S.tab = 'inicio';
+  } catch (e) { S.loginErr = e.message; }
+  S.busy = false; render();
+}
+function resetCliente() {
+  Object.assign(S, {reco: null, recoErr: '', q: '', results: null, msgs: [], cart: new Map(), perfil: null, tickets: null, stories: null});
+}
+let searchT;
+function buscar(q) {
+  S.q = q; clearTimeout(searchT);
+  if (!q.trim()) { S.results = null; return renderView(); }
+  searchT = setTimeout(async () => {
+    try { S.results = await api.buscar(q.trim()); } catch (e) { S.results = []; }
+    if (S.q === q) renderView();
+  }, 250);
+  S.results = null; renderView();
+}
+function renderView() {  // re-pinta solo el contenido (mantiene el foco del buscador)
+  const v = document.getElementById('view'); if (v && S.tab === 'inicio') v.innerHTML = vHome();
+}
+function findProduct(id) {
+  const pools = [S.results || [], ...(S.reco ? [S.reco.para_ti, S.reco.lo_de_siempre, S.reco.descubre] : []),
+    ...S.msgs.flatMap(m => [m.cards || [], m.cesta ? m.cesta.lineas : []])];
+  for (const list of pools) { const p = list.find(x => x.id === id); if (p) return p; }
+  return S.cart.has(id) ? S.cart.get(id).p : null;
+}
+
+/* =====================================================================
+   EVENTOS
+   ===================================================================== */
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-a]'); if (!el) return;
+  const a = el.dataset.a, id = el.dataset.id;
+  if (a === 'close-cart' && e.target.closest('[data-stop]') && el.classList.contains('scrim')) return;
+  switch (a) {
+    case 'demo': return entrar(el.dataset.t);
+    case 'onb-start': S.screen = 'onb1'; S.loginErr = ''; return render();
+    case 'onb-cancel': S.screen = 'welcome'; return render();
+    case 'taste': S.onb.tastes.has(id) ? S.onb.tastes.delete(id) : S.onb.tastes.add(id); return render();
+    case 'onb-next': S.screen = 'onb2'; return render();
+    case 'onb-back': S.screen = 'onb1'; return render();
+    case 'restr': S.onb.restr.has(id) ? S.onb.restr.delete(id) : S.onb.restr.add(id); return keepOnb2();
+    case 'alerg': S.onb.alerg.has(id) ? S.onb.alerg.delete(id) : S.onb.alerg.add(id); return keepOnb2();
+    case 'onb-create': return crearCuenta();
+    case 'tab':
+      S.tab = id; if (id === 'dona') greet();
+      if (id === 'cuenta') { S.perfil = null; S.tickets = null; }
+      return render();
+    case 'ask': S.tab = 'dona'; greet(); render(); return say(el.dataset.t);
+    case 'say': return say(el.dataset.t);
+    case 'reset':
+      try { await api.reset(S.cliente.id); } catch (err) { /* da igual */ }
+      S.msgs = []; greet(); return refreshLog();
+    case 'add': {
+      const p = findProduct(id); if (!p) return;
+      addToCart(p); toast(`Añadido: ${p.nombre}`);
+      return S.tab === 'dona' ? (refreshLog(), updateBadge()) : render();
+    }
+    case 'add-basket': {
+      const m = S.msgs[+el.dataset.m]; if (!m || !m.cesta || m.added) return;
+      m.cesta.lineas.forEach(l => addToCart({id: l.id, nombre: l.nombre, precio: l.precio, seccion: l.seccion}, l.cantidad));
+      m.added = true; toast(`${m.cesta.lineas.length} productos añadidos a tu cesta`); refreshLog(); return updateBadge();
+    }
+    case 'again': return otraPropuesta(+el.dataset.m);
+    case 'wrapped': return openWrapped(false);
+    case 'story-next': if (S.story < S.stories.length - 1) { S.story++; return render(); } S.stories = null; return render();
+    case 'story-prev': if (S.story > 0) S.story--; return render();
+    case 'story-close': S.stories = null; return render();
+    case 'open-cart': S.sheet = true; return render();
+    case 'close-cart': S.sheet = false; return render();
+    case 'qty': {
+      const it = S.cart.get(id); if (!it) return;
+      it.q += +el.dataset.d; if (it.q <= 0) S.cart.delete(id);
+      return render();
+    }
+    case 'checkout': return comprar();
+    case 'logout': store.del('dona_cliente'); S.cliente = null; resetCliente(); S.screen = 'welcome'; return render();
+  }
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  if (e.target.id === 'login-form') { const v = document.getElementById('tel').value; if (v.trim()) entrar(v); }
+  if (e.target.id === 'composer') { const i = document.getElementById('inp'); const v = i.value; i.value = ''; say(v); }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'q') buscar(e.target.value);
+  if (e.target.id === 'onb-nombre') S.onb.nombre = e.target.value;
+  if (e.target.id === 'onb-tel') S.onb.telefono = e.target.value;
+});
+document.addEventListener('keydown', e => {
+  if (!S.stories) return;
+  if (e.key === 'Escape') { S.stories = null; render(); }
+  if (e.key === 'ArrowRight') document.querySelector('[data-a="story-next"]').click();
+  if (e.key === 'ArrowLeft') document.querySelector('[data-a="story-prev"]').click();
+});
+function updateBadge() {
+  const b = document.querySelector('[data-a="open-cart"]'); if (!b) return;
+  const c = cartCount(); b.setAttribute('aria-label', `Mi cesta, ${c} productos`);
+  b.innerHTML = IC.cart + (c ? `<span class="badge">${c}</span>` : '');
+}
+function keepOnb2() {
+  const n = document.getElementById('onb-nombre'), t = document.getElementById('onb-tel');
+  if (n) S.onb.nombre = n.value; if (t) S.onb.telefono = t.value; render();
+}
+async function crearCuenta() {
+  keepOnb2();
+  const o = S.onb;
+  if (!o.nombre.trim() || !o.telefono.trim()) { S.loginErr = 'Escribe tu nombre y tu teléfono.'; return render(); }
+  S.busy = true; S.loginErr = ''; render();
+  try {
+    const c = await api.crear({nombre: o.nombre.trim(), telefono: o.telefono.replace(/\s+/g, ''), intereses: [...o.tastes],
+      restricciones: [...o.restr], alergias: [...o.alerg]});
+    S.cliente = {id: c.id, nombre: c.nombre, telefono: c.telefono};
+    store.set('dona_cliente', S.cliente); resetCliente(); S.screen = 'app'; S.tab = 'inicio';
+    toast(`Bienvenida, ${c.nombre}. Dona ya te conoce un poco.`);
+  } catch (e) { S.loginErr = e.message; }
+  S.busy = false; render();
+}
+async function comprar() {
+  const lineas = [...S.cart.values()].map(({p, q}) => ({producto_id: p.id, cantidad: q}));
+  if (!lineas.length) return;
+  S.busy = true; render();
+  try {
+    const r = await api.comprar({cliente_id: S.cliente.id, origen: 'online', metodo_pago: 'tarjeta', lineas});
+    if (r.duplicado) toast('Esta compra ya estaba registrada');
+    else { toast(`Compra registrada (${fmt(r.total)}). Dona ya la tiene en cuenta.`); S.cart = new Map(); S.sheet = false; }
+    S.reco = null; S.recoErr = ''; S.tickets = null; S.perfil = null;
+  } catch (e) { toast(`No se ha podido registrar: ${e.message}`); }
+  S.busy = false; render();
+}
+
+render();
+</script>
+</body>
+</html>
