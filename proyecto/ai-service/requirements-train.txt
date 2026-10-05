@@ -1,0 +1,3 @@
+# Entrenamiento del modelo de embeddings (python -m app.recsys.train)
+-r requirements.txt
+torch>=2.2

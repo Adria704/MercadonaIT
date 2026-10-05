@@ -1,0 +1,86 @@
+### Pruebas de la API del backend (IntelliJ: botón ▶ junto a cada petición; VS Code: extensión REST Client)
+@api = http://localhost:8080/api
+
+### Estado del backend y de la IA (qué LLM está disponible)
+GET {{api}}/status
+###
+GET {{api}}/ia/estado
+
+### Onboarding tipo Pinterest: intereses, restricciones y alérgenos
+GET {{api}}/onboarding/intereses
+
+### Alta de cuenta (Spring Boot guarda el cliente y sus gustos iniciales)
+POST {{api}}/clientes
+Content-Type: application/json
+
+{"nombre": "Pepa", "telefono": "611222333", "intereses": ["desayunos", "dulce"], "alergias": ["frutos_secos"]}
+
+### Identificación por teléfono (como el ticket digital)
+POST {{api}}/clientes/login
+Content-Type: application/json
+
+{"telefono": "600111222"}
+
+### Catálogo
+GET {{api}}/productos?q=leche
+
+### Recomendaciones que se adaptan (Laura: 1 año de compras; Carmen C0003: cuenta nueva)
+GET {{api}}/clientes/C0001/recomendaciones
+###
+GET {{api}}/clientes/C0003/recomendaciones
+
+### Registrar un ticket digital (luego vuelve a pedir recomendaciones: se adaptan)
+POST {{api}}/tickets
+Content-Type: application/json
+
+{"telefono": "600555666", "tienda_id": "T03", "metodo_pago": "efectivo", "origen": "foto",
+ "lineas": [{"producto_id": "P0001", "cantidad": 2}, {"producto_id": "P0031", "cantidad": 1}]}
+
+### Últimos tickets
+GET {{api}}/clientes/C0003/tickets
+
+### Asistente conversacional
+POST {{api}}/clientes/C0001/chat
+Content-Type: application/json
+
+{"mensaje": "¿Cuánto llevo gastado este mes?"}
+
+###
+POST {{api}}/clientes/C0001/chat
+Content-Type: application/json
+
+{"mensaje": "Recomiéndame algo que no haya probado"}
+
+### Cesta de Dona (presupuesto + personas + dietas). "variante" > 0 = otra propuesta
+POST {{api}}/clientes/C0001/cesta
+Content-Type: application/json
+
+{"presupuesto": 30, "personas": 3, "restricciones": ["sin_gluten", "vegano"]}
+
+###
+POST {{api}}/clientes/C0001/chat
+Content-Type: application/json
+
+{"mensaje": "30 € para una persona celíaca y dos veganas"}
+
+### Historial con la ruta original del equipo
+GET {{api}}/tickets/C0001
+
+### Me gusta / no me gusta
+POST {{api}}/clientes/C0001/gustos
+Content-Type: application/json
+
+{"no_me_gusta": ["pescado"]}
+
+### Wrapped (llm=false = plantilla instantánea)
+GET {{api}}/clientes/C0001/wrapped?llm=false
+###
+GET {{api}}/clientes/C0001/wrapped?periodo=2026-09
+
+### Reciclaje de los últimos 30 días / de un producto
+GET {{api}}/clientes/C0001/reciclaje
+###
+GET {{api}}/productos/P0031/reciclaje
+
+### "Esto es lo que sé de ti"
+GET {{api}}/clientes/C0001/perfil
