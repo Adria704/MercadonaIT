@@ -337,7 +337,7 @@ const S = {
   cliente: store.get('dona_cliente'), screen: 'welcome', tab: 'inicio', loginErr: '', busy: false,
   reco: null, recoErr: '', q: '', results: null,
   msgs: [], typing: false, cart: new Map(), sheet: false, donaView: 'chat',
-  perfil: null, tickets: null, intereses: null,
+  perfil: null, tickets: null, intereses: null, prefEdit: false,
   onb: {tastes: new Set(), restr: new Set(), alerg: new Set(), nombre: '', telefono: ''},
 };
 if (S.cliente) S.screen = 'app';
@@ -396,19 +396,19 @@ function vOnb1() {
 }
 
 function vOnb2() {
-  const o = S.onb, i = S.intereses || {restricciones: [], alergenos: []};
+  const o = S.onb, i = S.intereses || {restricciones: [], alergenos: []}, showIdentity = !S.prefEdit;
   return `<section class="onb">
-    <div class="onb-head"><p class="step">Paso 2 de 2</p><h1>Cuéntanos un poco de ti</h1><p>Dona lo tendrá en cuenta siempre, aunque no se lo repitas.</p></div>
+    <div class="onb-head"><p class="step">Paso 2 de 2</p><h1>${S.prefEdit ? 'Cambia tus preferencias' : 'Cuéntanos un poco de ti'}</h1><p>${S.prefEdit ? 'Ajusta lo que te gusta, lo que evitas y lo que no puedes comer.' : 'Dona lo tendrá en cuenta siempre, aunque no se lo repitas.'}</p></div>
     <div class="onb-body">
-      <div class="card"><h2>Tu nombre</h2><input id="onb-nombre" value="${esc(o.nombre)}" autocomplete="given-name" placeholder="Pepa"></div>
-      <div class="card"><h2>Tu teléfono</h2><p class="hint">Con él asociamos tus tickets digitales.</p><input id="onb-tel" value="${esc(o.telefono)}" inputmode="tel" placeholder="611 222 333"></div>
+      ${showIdentity ? `<div class="card"><h2>Tu nombre</h2><input id="onb-nombre" value="${esc(o.nombre)}" autocomplete="given-name" placeholder="Pepa"></div>` : ''}
+      ${showIdentity ? `<div class="card"><h2>Tu teléfono</h2><p class="hint">Con él asociamos tus tickets digitales.</p><input id="onb-tel" value="${esc(o.telefono)}" inputmode="tel" placeholder="611 222 333"></div>` : ''}
       <div class="card"><h2>¿Seguís alguna dieta?</h2>
         <div class="chips">${i.restricciones.map(r => `<button class="chip" aria-pressed="${o.restr.has(r.id)}" data-a="restr" data-id="${esc(r.id)}">${esc(r.titulo)}</button>`).join('')}</div></div>
       <div class="card"><h2>¿Alguna alergia o intolerancia?</h2><p class="hint">Dona nunca te propondrá nada que la contenga, ni con trazas.</p>
         <div class="chips">${i.alergenos.map(a => `<button class="chip" aria-pressed="${o.alerg.has(a)}" data-a="alerg" data-id="${esc(a)}">${esc(ALERGENO[a] || a)}</button>`).join('')}</div></div>
       ${S.loginErr ? `<p class="err" role="alert" style="color:var(--danger);font-weight:600;margin:12px 4px">${esc(S.loginErr)}</p>` : ''}
     </div>
-    <div class="onb-foot"><button class="skip" data-a="onb-back">Atrás</button><button class="btn green" data-a="onb-create" ${S.busy ? 'disabled' : ''}>Crear mi cuenta</button></div>
+    <div class="onb-foot"><button class="skip" data-a="onb-back">Atrás</button><button class="btn green" data-a="onb-create" ${S.busy ? 'disabled' : ''}>${S.prefEdit ? 'Guardar cambios' : 'Crear mi cuenta'}</button></div>
   </section>`;
 }
 
@@ -600,6 +600,7 @@ function vAccount() {
   return `<div class="scroll">
     <div class="card"><h2>${esc(c.nombre)}</h2><p class="hint">Teléfono ${esc(c.telefono || '')} · cliente ${esc(c.id)}</p></div>
     <div class="card"><h2>Esto es lo que sé de ti</h2><p class="hint">Puedes cambiarlo diciéndoselo a Dona ("no me gusta el pescado").</p>
+      <button class="btn ghost" data-a="pref-edit" style="margin:8px 0 12px">Cambiar preferencias</button>
       ${!p ? '<div class="skeleton" style="height:80px;margin-top:10px"></div>' : `
         <div class="kv">${Object.keys(pref.intereses).map(k => `<span>${esc(titles[k] || k)}</span>`).join('') || '<span>Sin gustos elegidos</span>'}</div>
         ${pref.restricciones.length || pref.alergias.length ? `<div class="kv">${pref.restricciones.map(r => `<span class="no">${esc(titles[r] || r)}</span>`).join('')}${pref.alergias.map(a => `<span class="no">Sin ${esc((ALERGENO[a] || a).toLowerCase())}</span>`).join('')}</div>` : ''}
@@ -633,9 +634,25 @@ function vCart() {
    RENDER Y CARGA DE DATOS
    ===================================================================== */
 function render() {
+  const active = document.activeElement;
+  if (active && active !== document.body && $app.contains(active)) active.blur();
+  const prevOnbBody = document.querySelector('.onb-body');
+  const onbScrollTop = prevOnbBody ? prevOnbBody.scrollTop : 0;
+  const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+  const isOnb = S.screen === 'onb1' || S.screen === 'onb2';
   $app.innerHTML = S.screen === 'welcome' ? vWelcome() : S.screen === 'onb1' ? vOnb1() : S.screen === 'onb2' ? vOnb2() : vShell();
   if (toast.node) $app.appendChild(toast.node);  // el aviso sobrevive al repintado
   if (S.screen === 'app' && S.tab === 'dona' && S.donaView === 'chat') refreshLog();
+  if (isOnb) {
+    requestAnimationFrame(() => {
+      const nextOnbBody = document.querySelector('.onb-body');
+      if (nextOnbBody) {
+        nextOnbBody.scrollTop = onbScrollTop;
+        nextOnbBody.scrollTo({top: onbScrollTop, left: 0, behavior: 'auto'});
+      }
+      window.scrollTo({top: scrollY, left: 0, behavior: 'auto'});
+    });
+  }
   load();
 }
 let loading = {};
@@ -666,8 +683,47 @@ async function entrar(telefono) {
   } catch (e) { S.loginErr = e.message; }
   S.busy = false; render();
 }
+function resetOnb() {
+  S.prefEdit = false;
+  S.onb = {tastes: new Set(), restr: new Set(), alerg: new Set(), nombre: '', telefono: ''};
+}
+function setOnbFromPerfil() {
+  const pref = S.perfil && S.perfil.preferencias ? S.perfil.preferencias : {intereses: {}, restricciones: [], alergias: []};
+  S.onb = {
+    tastes: new Set(Object.keys(pref.intereses || {})),
+    restr: new Set(pref.restricciones || []),
+    alerg: new Set(pref.alergias || []),
+    nombre: S.cliente ? S.cliente.nombre : '',
+    telefono: S.cliente ? S.cliente.telefono : '',
+  };
+}
 function resetCliente() {
+  S.prefEdit = false;
   Object.assign(S, {reco: null, recoErr: '', q: '', results: null, msgs: [], cart: new Map(), perfil: null, tickets: null});
+  resetOnb();
+}
+async function guardarPreferencias() {
+  if (!S.cliente) return;
+  const ids = [...S.onb.tastes];
+  S.busy = true; S.loginErr = ''; render();
+  try {
+    if (typeof api.gustos === 'function') {
+      await api.gustos(S.cliente.id, {me_gusta: ids, no_me_gusta: []});
+    }
+    if (S.perfil) {
+      S.perfil.preferencias = {
+        ...S.perfil.preferencias,
+        intereses: Object.fromEntries(ids.map(id => [id, 1])),
+        restricciones: [...S.onb.restr],
+        alergias: [...S.onb.alerg],
+      };
+    }
+    S.reco = null; S.prefEdit = false; S.screen = 'app'; S.tab = 'cuenta';
+    toast('Preferencias actualizadas');
+  } catch (e) {
+    S.loginErr = e.message;
+  }
+  S.busy = false; render();
 }
 let searchT;
 function buscar(q) {
@@ -692,20 +748,44 @@ function findProduct(id) {
 /* =====================================================================
    EVENTOS
    ===================================================================== */
+document.addEventListener('pointerdown', e => {
+  const el = e.target.closest('[data-a]');
+  if (!el) return;
+  const blockScroll = ['taste', 'restr', 'alerg', 'onb-start', 'pref-edit', 'onb-cancel', 'onb-next', 'onb-back', 'onb-create'];
+  if (blockScroll.includes(el.dataset.a)) {
+    e.preventDefault();
+    if (typeof el.focus === 'function') el.focus({preventScroll: true});
+  }
+}, {passive: false});
+
 document.addEventListener('click', async e => {
   const el = e.target.closest('[data-a]'); if (!el) return;
   const a = el.dataset.a, id = el.dataset.id;
   if (a === 'close-cart' && e.target.closest('[data-stop]') && el.classList.contains('scrim')) return;
+  if (el && typeof el.blur === 'function') el.blur();
   switch (a) {
     case 'demo': return entrar(el.dataset.t);
-    case 'onb-start': S.screen = 'onb1'; S.loginErr = ''; return render();
-    case 'onb-cancel': S.screen = 'welcome'; return render();
+    case 'onb-start': resetOnb(); S.screen = 'onb1'; S.loginErr = ''; return render();
+    case 'pref-edit': {
+      if (!S.cliente) return;
+      if (!S.intereses) S.intereses = await api.intereses();
+      if (!S.perfil) {
+        try { S.perfil = await api.perfil(S.cliente.id); } catch (e) { S.perfil = {preferencias: {intereses: {}, restricciones: [], alergias: []}}; }
+      }
+      setOnbFromPerfil();
+      S.prefEdit = true; S.loginErr = ''; S.screen = 'onb1'; return render();
+    }
+    case 'onb-cancel':
+      if (S.prefEdit) { S.prefEdit = false; S.screen = 'app'; S.tab = 'cuenta'; S.loginErr = ''; return render(); }
+      resetOnb(); S.screen = 'welcome'; return render();
     case 'taste': S.onb.tastes.has(id) ? S.onb.tastes.delete(id) : S.onb.tastes.add(id); return render();
     case 'onb-next': S.screen = 'onb2'; return render();
-    case 'onb-back': S.screen = 'onb1'; return render();
+    case 'onb-back':
+      if (S.prefEdit) { S.screen = 'onb1'; return render(); }
+      S.screen = 'onb1'; return render();
     case 'restr': S.onb.restr.has(id) ? S.onb.restr.delete(id) : S.onb.restr.add(id); return keepOnb2();
     case 'alerg': S.onb.alerg.has(id) ? S.onb.alerg.delete(id) : S.onb.alerg.add(id); return keepOnb2();
-    case 'onb-create': return crearCuenta();
+    case 'onb-create': return S.prefEdit ? guardarPreferencias() : crearCuenta();
     case 'tab':
       S.tab = id; if (id === 'dona') greet();
       if (id === 'cuenta') { S.perfil = null; S.tickets = null; }

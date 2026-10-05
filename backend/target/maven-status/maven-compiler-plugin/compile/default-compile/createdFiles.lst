@@ -1,0 +1,4 @@
+com/example/demo/StatusController.class
+com/example/demo/config/Traza.class
+com/example/demo/config/TrazaConfig.class
+com/example/demo/config/TrazaInterceptor.class
