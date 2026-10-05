@@ -1,0 +1,13 @@
+# Python
+ai-service/.venv/
+__pycache__/
+ai-service/.env
+ai-service/.cache/
+ai-service/data/*.db
+.pytest_cache/
+# Java
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+.idea/
+*.iml
+.vscode/

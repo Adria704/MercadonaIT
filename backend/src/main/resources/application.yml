@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  web:
+    resources:
+      # La app web (carpeta frontend/ del proyecto) se sirve en http://localhost:8080/
+      static-locations: classpath:/static/,file:../frontend/
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mercadona_db
+    username: postgres
+    password: root
+  jpa:
+    # El esquema lo crea el servicio de IA (python -m app.data.seed) siguiendo ai-service/db/schema.sql.
+    # "none" evita que Hibernate modifique tablas compartidas con el servicio de IA.
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    show-sql: false
+
+# URL del servicio de IA (FastAPI, Python)
+ia:
+  url: http://localhost:8001
+  timeout-segundos: 180   # Qwen 7B en local puede tardar en responder
+
+# Orígenes del frontend React en desarrollo (Vite: 5173, Create React App: 3000)
+app:
+  cors:
+    origenes: http://localhost:5173,http://localhost:3000
