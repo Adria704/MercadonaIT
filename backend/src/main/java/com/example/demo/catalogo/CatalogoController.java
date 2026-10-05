@@ -1,5 +1,6 @@
 package com.example.demo.catalogo;
 
+import com.example.demo.config.Traza;
 import com.example.demo.dominio.Producto;
 import com.example.demo.dominio.ProductoRepository;
 import java.util.Arrays;
@@ -26,8 +27,10 @@ public class CatalogoController {
 
     @GetMapping
     public List<Map<String, Object>> buscar(@RequestParam(defaultValue = "") String q) {
-        return productos.findTop20ByNombreContainingIgnoreCaseAndSensibleFalseOrderByNombreAsc(q.trim())
+        List<Map<String, Object>> r = productos.findTop20ByNombreContainingIgnoreCaseAndSensibleFalseOrderByNombreAsc(q.trim())
                 .stream().map(CatalogoController::aMapa).toList();
+        Traza.paso("BASE DE DATOS", r.size() + " productos encontrados en el catalogo");
+        return r;
     }
 
     @GetMapping("/{id}")

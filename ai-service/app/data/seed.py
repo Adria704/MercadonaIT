@@ -87,7 +87,7 @@ def _demo_tickets(c: dict, cat: pd.DataFrame, rng, start, end) -> list[dict]:
                 if k == "turron":
                     p = 0.5 if d.month == 12 else 0.0
                 if k in ("patata", "cebolla"):
-                    p = 0.2  # tortilla con cebolla -> "team cebolla" en el Wrapped
+                    p = 0.2
                 if rng.random() < p:
                     items[main.loc[k, "id"]] = 1
             if items:

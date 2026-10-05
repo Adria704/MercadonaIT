@@ -1,5 +1,7 @@
 package com.example.demo.ia;
 
+import com.example.demo.config.Traza;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,20 +42,28 @@ public class IaClient {
         return enviar(HttpMethod.POST, uri, cuerpoJson == null || cuerpoJson.isBlank() ? "{}" : cuerpoJson);
     }
 
+    private static final MediaType JSON_UTF8 = new MediaType("application", "json", StandardCharsets.UTF_8);
+
     private ResponseEntity<String> enviar(HttpMethod metodo, Function<UriBuilder, java.net.URI> uri, String cuerpoJson) {
+        long t0 = System.currentTimeMillis();
         try {
             RestClient.RequestBodySpec peticion = http.method(metodo).uri(uri);
             if (cuerpoJson != null) {
                 peticion.contentType(MediaType.APPLICATION_JSON).body(cuerpoJson);
             }
+            Traza.paso("HTTP " + metodo.name(), "Llamando al servicio de IA (Python/FastAPI) en " + baseUrl + "...");
             String respuesta = peticion.retrieve().body(String.class);
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(respuesta);
+            Traza.paso("RESPUESTA IA", "OK en " + (System.currentTimeMillis() - t0) + " ms ("
+                    + (respuesta == null ? 0 : respuesta.length()) + " caracteres)");
+            return ResponseEntity.ok().contentType(JSON_UTF8).body(respuesta);
         } catch (RestClientResponseException e) {
             // Error devuelto por el servicio de IA (404 cliente no encontrado, 503 sin LLM...): se reenvía igual
-            return ResponseEntity.status(e.getStatusCode()).contentType(MediaType.APPLICATION_JSON)
+            Traza.paso("RESPUESTA IA", "Error " + e.getStatusCode().value() + " devuelto por el servicio de IA");
+            return ResponseEntity.status(e.getStatusCode()).contentType(JSON_UTF8)
                     .body(e.getResponseBodyAsString());
         } catch (ResourceAccessException e) {
-            return ResponseEntity.status(503).contentType(MediaType.APPLICATION_JSON)
+            Traza.paso("ERROR", "El servicio de IA no responde en " + baseUrl + ". Esta arrancado?");
+            return ResponseEntity.status(503).contentType(JSON_UTF8)
                     .body("{\"error\": \"El servicio de IA no responde en " + baseUrl
                             + ". Arráncalo con: python -m uvicorn app.main:app --port 8001\"}");
         }

@@ -30,7 +30,7 @@ productos = Table(
     Column("trazas", String(200), default=""),
     Column("etiquetas", String(200), default=""),         # csv: vegano,sin_gluten,fresco,...
     Column("envase", Text, default="[]"),                 # json: [["botella de plástico","amarillo"], ...]
-    Column("sensible", Boolean, default=False),           # nunca aparece en el Wrapped ni en recomendaciones
+    Column("sensible", Boolean, default=False),           # nunca aparece en recomendaciones ni en cestas
 )
 
 clientes = Table(

@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS productos (
     trazas      VARCHAR(200) DEFAULT '',
     etiquetas   VARCHAR(200) DEFAULT '',
     envase      TEXT         DEFAULT '[]',      -- JSON: [["botella de plástico","amarillo"], ...]
-    sensible    BOOLEAN      DEFAULT FALSE      -- excluido del Wrapped y de recomendaciones
+    sensible    BOOLEAN      DEFAULT FALSE      -- excluido de recomendaciones y cestas
 );
 
 CREATE TABLE IF NOT EXISTS clientes (

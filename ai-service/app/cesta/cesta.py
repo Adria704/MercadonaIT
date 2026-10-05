@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import zlib
 
+from app import trazas
 from app.data import catalogo
 from app.perfil import perfil
 from app.recsys.recommender import contexto
@@ -48,6 +49,10 @@ def preparar(cliente_id: str, presupuesto: float, personas: int | None = None, r
         if perfil.no_apto(row, prefs):
             continue
         pool.append(pid)
+    dietas = prefs["restricciones"] + [f"sin {a}" for a in prefs["alergias"]]
+    trazas.paso("CESTA", f"Pedido: {presupuesto:.2f} € para {personas} persona{'s' if personas > 1 else ''}"
+                         + (f", dietas: {', '.join(dietas)}" if dietas else ", sin restricciones"))
+    trazas.paso("CESTA", f"Filtro de alérgenos y dietas (en código, no en la IA): {len(pool)} productos aptos de {len(cx['ids'])}")
     if not pool:
         return {"error": "Ningún producto cumple esas restricciones"}
 
@@ -98,6 +103,8 @@ def preparar(cliente_id: str, presupuesto: float, personas: int | None = None, r
     orden = {s: i for i, s in enumerate(dict.fromkeys(RONDA))}
     items = sorted(lineas.items(), key=lambda kv: (orden.get(cat.loc[kv[0], "seccion"], 99), cat.loc[kv[0], "nombre"]))
     total = round(sum(precio[p] * q for p, q in items), 2)
+    trazas.paso("CESTA", f"Cesta lista: {len(items)} productos, {total:.2f} € (sobran {presupuesto - total:.2f} €)"
+                         + (f", variante {variante}" if variante else ""))
     return {"cesta": {
         "lineas": [{"id": p, "nombre": cat.loc[p, "nombre"], "seccion": cat.loc[p, "seccion"], "cantidad": q,
                     "precio": precio[p], "subtotal": round(precio[p] * q, 2), "habitual": p in habituales} for p, q in items],

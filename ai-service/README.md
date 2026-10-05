@@ -3,8 +3,8 @@
 Microservicio Python que pone la inteligencia sobre los tickets digitales:
 
 - **Recomendaciones que se adaptan**: empiezan por lo que eliges al crear la cuenta (tarjetas tipo Pinterest) y van pasando a tus compras reales, sin dejar nunca de proponer cosas nuevas.
-- **Asistente conversacional** con tus datos: "¿cuánto llevo gastado este mes?", "¿cuándo compré café?", "recomiéndame algo nuevo", "no me gusta el pescado".
-- **Wrapped**: tu año o tu mes en el súper, con privacidad (sin importes al compartir y sin productos sensibles).
+- **Asistente conversacional** con tus datos: "¿cuánto llevo gastado este mes?", "¿cuándo compré café?", "recomiéndame algo nuevo", "no me gusta el pescado", "30 € para dos, sin lactosa".
+- **Cesta de Dona**: presupuesto + personas + dietas → cesta personalizada y apta para todos.
 - **Reciclaje** (secundario): a qué contenedor va cada envase de tu compra.
 
 El LLM corre **en local con Qwen 2.5 7B (Ollama)**; si no está disponible, usa una **API gratuita** (Gemini o Groq), y si tampoco hay, un modo sin IA para que nada se caiga.
@@ -53,7 +53,7 @@ python -m scripts.eval_agent         # precisión eligiendo herramientas y laten
 
 | Cliente de demo | Teléfono | Para enseñar |
 |---|---|---|
-| Laura (C0001) | 600111222 | Recomendaciones basadas sobre todo en sus compras (94 %), Wrapped completo |
+| Laura (C0001) | 600111222 | Recomendaciones basadas sobre todo en sus compras (94 %) y "Te toca reponer" |
 | Álex (C0002) | 600333444 | Estudiante: cocina rápida y aperitivo, compra los viernes |
 | Carmen (C0003) | 600555666 | Cuenta nueva: recomendaciones solo por sus gustos iniciales y sin gluten |
 
@@ -69,7 +69,7 @@ python -m scripts.eval_agent         # precisión eligiendo herramientas y laten
 | GET | `/clientes/{id}/recomendaciones` | Lo de siempre, para ti y descubre, con motivo y grado de adaptación |
 | POST | `/clientes/{id}/chat` | Asistente conversacional con traza de herramientas |
 | POST | `/clientes/{id}/gustos` | Me gusta / no me gusta |
-| GET | `/clientes/{id}/wrapped?periodo=2026` | Wrapped anual (`2026`), mensual (`2026-09`) o último año |
+| POST | `/clientes/{id}/cesta` | Cesta de Dona con presupuesto, personas y dietas |
 | GET | `/clientes/{id}/reciclaje` | Envases por contenedor |
 
 ## Reentrenar el modelo de recomendación (PyTorch)

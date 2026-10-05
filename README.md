@@ -1,6 +1,6 @@
 # Asistente de compra personal: hackathon Mercadona IT
 
-Asistente que convierte el ticket digital en recomendaciones que se adaptan a ti, un chat con tus datos de compra, un "Wrapped" de tu año en el súper y consejos de reciclaje.
+Asistente que convierte el ticket digital en recomendaciones que se adaptan a ti, un chat con tus datos de compra que llena la cesta con tu presupuesto, y consejos de reciclaje.
 
 ```
 proyecto/
@@ -78,10 +78,9 @@ Con la identidad de Dona ("Dona, no te abandona"):
   - **Para ti:** recomendaciones sacadas de sus datos. Incluye "Te toca reponer" (según cada cuánto compra cada producto y hace cuánto que no, con barra de progreso y "Añadir a la cesta"), lo de siempre, lo que encaja con sus gustos y lo nuevo por descubrir, cada uno con su motivo.
   - **Chat** con la IA:
     - "30 € para una persona celíaca y dos veganas" → ticket con la cesta, con "Otra propuesta" y "Añadir a mi cesta".
-    - Preguntas sobre tus compras.
-    - Wrapped a pantalla completa.
+    - Preguntas sobre tus compras y sobre lo que te gusta o no.
 - **Mi cesta** (arriba a la derecha): "Confirmar compra" la guarda como ticket digital, y Dona la tiene en cuenta en la siguiente recomendación.
-- **Cuenta:** "Esto es lo que sé de ti", últimas compras y el Wrapped.
+- **Cuenta:** "Esto es lo que sé de ti" y las últimas compras.
 - **Categorías y Listas:** páginas vacías (fuera del alcance de la demo).
 
 Para apuntar la app a otro servidor: `index.html?api=http://localhost:8080/api`.
@@ -100,7 +99,7 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/clientes/C0001/cha
 
 | Cliente de demo | Teléfono | Para enseñar |
 |---|---|---|
-| Laura (C0001) | 600111222 | 1 año de compras: recomendaciones basadas en su historial y Wrapped completo |
+| Laura (C0001) | 600111222 | 1 año de compras: recomendaciones basadas en su historial y "Te toca reponer" |
 | Álex (C0002) | 600333444 | Estudiante: cocina rápida y aperitivo |
 | Carmen (C0003) | 600555666 | Cuenta nueva, sin gluten: recomendaciones solo por sus gustos iniciales |
 
@@ -123,11 +122,73 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/clientes/C0001/cha
 | POST | `/clientes/{id}/chat` | Asistente: `{"mensaje": "..."}` | IA |
 | POST | `/clientes/{id}/chat/reset` | Reiniciar la conversación | IA |
 | POST | `/clientes/{id}/gustos` | `{"me_gusta": [...], "no_me_gusta": [...]}` | IA |
-| GET | `/clientes/{id}/wrapped?periodo=2026` | Wrapped anual, mensual (`2026-09`) o del último año | IA |
 | GET | `/clientes/{id}/reciclaje` | Envases por contenedor (30 días o `?ticket_id=`) | IA |
 | GET | `/productos/{id}/reciclaje` | A qué contenedor va cada parte del envase | IA |
 
 Todas las respuestas usan nombres de campo en `snake_case`. El frontend solo habla con el backend; el backend reenvía al servicio de IA.
+
+## Ver en la consola lo que pasa por dentro
+
+Mientras alguien usa la app en el navegador, la ventana del **servicio de IA** imprime cada acción como un bloque. Por ejemplo, al pedirle a Dona una cesta:
+
+```
++----------------------------------------------------------------------------+
+| POST   /api/clientes/C0001/chat                                   12:30:00 |
++----------------------------------------------------------------------------+
+  APP     --->  DONA         Mensaje de C0001: «30 € para una persona celíaca y dos veganas»
+  DONA    --->  LLM          Preguntando a ollama (qwen2.5:7b)...
+  LLM     --->  DONA         ollama respondió en 2140 ms (1180 tokens)
+  DONA    ===>  HERRAMIENTA  El agente decide usar preparar_cesta(presupuesto=30.0, personas=3, ...)
+  DONA    --->  POSTGRES     Historial de C0001: 140 compras, 31 productos distintos
+  RECOMENDADOR (PyTorch)     item2vec (PyTorch): pesan 95% sus compras y 5% sus gustos iniciales
+  CESTA                      Filtro de alérgenos y dietas (en código, no en la IA): 34 productos aptos de 131
+  CESTA                      Cesta lista: 12 productos, 29.67 € (sobran 0.33 €)
+  DONA    --->  APP          «Te he preparado una cesta de 12 productos...»
+  <== 200 OK                 [##########..........] 2310 ms
+```
+
+Lo mismo con el login, las recomendaciones, la búsqueda, la cesta, los gustos ("no me gusta el pescado") y la compra, incluido el deduplicado.
+
+- **Si la app va por Spring (puerto 8080):** también la ventana del backend Java muestra su parte del recorrido.
+- **Opciones en `ai-service/.env`:** `TRAZAS=0` desactiva las trazas y `TRAZAS_COLOR=0` quita los colores.
+
+## Demo de solo el backend (consola)
+
+Con PostgreSQL, el servicio de IA y el backend arrancados, abre **otra** ventana de PowerShell:
+
+```powershell
+cd backend
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\demo-backend.ps1
+```
+
+El script lanza 8 peticiones con una pausa entre ellas:
+1. estado;
+2. login;
+3. recomendación (`POST /api/tickets/C0001/recomendacion`);
+4. ticket digital;
+5. el mismo ticket repetido, para ver el deduplicado;
+6. historial;
+7. cesta de Dona;
+8. cliente nuevo.
+
+Mientras, la ventana de Spring muestra cada petición en una caja, cada paso como una flecha de color entre componentes y, al final, el código de respuesta con una barra de tiempo:
+
+```
++----------------------------------------------------------------------------+
+| POST   /api/clientes/C0001/chat                                   12:21:18 |
++----------------------------------------------------------------------------+
+  SPRING  --->  POSTGRES   Cliente C0001: 3 preferencias y 140 tickets guardados en PostgreSQL
+  *  ORQUESTADOR           Mensaje para Dona: el agente decide que herramientas usar
+  SPRING  --->  IA         Llamando al servicio de IA (Python/FastAPI) en http://localhost:8001...
+  SPRING  <---  IA         OK en 120 ms (4380 caracteres)
+  IA      --->  LLM        Herramientas usadas: preparar_cesta | Modelo: ollama
+  <== 200 OK               [##..................] 135 ms
+```
+
+Si en la consola salen caracteres raros como `[32m` en lugar de colores, usa Windows Terminal, o desactívalos en `application.yml` con `app.trazas.color: false` y `spring.output.ansi.enabled: never`.
+
+Con `-SinPausas` va todo seguido.
 
 ## Guion de demo (90 s)
 
@@ -135,7 +196,7 @@ Todas las respuestas usan nombres de campo en `snake_case`. El frontend solo hab
 2. Botón **Dona** → "30 € para una persona celíaca y dos veganas" → ticket ajustado al euro y apto para todos. Pulsa "Otra propuesta".
 3. "Añadir a mi cesta" → **Confirmar compra** → vuelve a Inicio: las recomendaciones ya mezclan gustos y compras.
 4. Entra como **Laura** (1 año de compras) → Dona → **Para ti**: "Te toca reponer" sale de su ritmo real de compra.
-5. Chat: "¿Cuánto llevo gastado este mes?" → "Enséñame mi Wrapped".
+5. Chat: "¿Cuánto llevo gastado este mes?" → "No me gusta el pescado" → vuelve a Para ti: el pescado ha desaparecido.
 
 ## Problemas frecuentes
 

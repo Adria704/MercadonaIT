@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import time
 from datetime import datetime
 
 from fastapi import APIRouter, FastAPI, HTTPException
@@ -14,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy import insert, select
 
-from app import db
+from app import db, trazas
 from app.agent.tools import agent
 from app.cesta import cesta as cesta_mod
 from app.config import ROOT, settings
@@ -25,12 +26,32 @@ from app.perfil.intereses import ALERGENOS, RESTRICCIONES, tarjetas_onboarding
 from app.recsys.recommender import recargar as recargar_modelo
 from app.recsys.recommender import recomendar
 from app.reciclaje import reciclaje
-from app.wrapped import wrapped
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 app = FastAPI(title="Servicio de IA – asistente de compra", version="1.0",
-              description="Recomendaciones adaptativas, asistente conversacional, Wrapped y reciclaje sobre los tickets digitales.")
+              description="Recomendaciones adaptativas, asistente conversacional, cesta con presupuesto y reciclaje sobre los tickets digitales.")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+if trazas.ACTIVAS:
+    logging.getLogger("uvicorn.access").disabled = True  # ya imprimimos cada petición con más detalle
+
+SIN_TRAZA = ("/health", "/docs", "/openapi.json", "/redoc", "/favicon")
+
+
+@app.middleware("http")
+async def traza_peticiones(request, call_next):
+    """Cada petición de la app sale en la consola como un bloque con lo que ha pasado dentro."""
+    ruta = request.url.path
+    estatica = ruta == "/" or "." in ruta.rsplit("/", 1)[-1] or ruta.startswith(SIN_TRAZA)
+    if estatica or request.method == "OPTIONS":
+        return await call_next(request)
+    token, t0, estado = trazas.empezar(), time.perf_counter(), 500
+    try:
+        response = await call_next(request)
+        estado = response.status_code
+        return response
+    finally:
+        q = request.url.query
+        trazas.terminar(token, request.method, ruta + (f"?{q}" if q else ""), estado, int((time.perf_counter() - t0) * 1000))
 
 
 # ------------------------------------------------------------------ modelos
@@ -120,16 +141,23 @@ def intereses() -> dict:
 @app.post("/clientes")
 def crear_cuenta(body: CuentaIn) -> dict:
     try:
-        return perfil.crear(body.nombre, body.telefono, body.intereses, body.restricciones, body.alergias)
+        c = perfil.crear(body.nombre, body.telefono, body.intereses, body.restricciones, body.alergias)
     except ValueError as e:
+        trazas.paso("ERROR", str(e))
         raise HTTPException(400, str(e))
+    trazas.paso("GUARDADO", f"Cuenta {c['id']} ({c['nombre']}): {len(body.intereses)} gustos, "
+                            f"{len(body.restricciones)} dietas, {len(body.alergias)} alergias")
+    trazas.paso("RESULTADO", "Sin compras todavía: sus recomendaciones saldrán de los gustos elegidos")
+    return c
 
 
 @app.post("/clientes/login")
 def login(body: LoginIn) -> dict:
     c = perfil.identificar(body.telefono, body.tarjeta_token)
     if not c:
+        trazas.paso("BD", "Ninguna cuenta con ese teléfono o tarjeta")
         raise HTTPException(404, "No hay ninguna cuenta con ese teléfono o tarjeta")
+    trazas.paso("BD", f"Cliente encontrado: {c['id']} ({c['nombre']})")
     return c
 
 
@@ -138,7 +166,10 @@ def ver_perfil(cliente_id: str) -> dict:
     """Pantalla 'Esto es lo que sé de ti': transparencia total."""
     c = _cliente(cliente_id)
     n = db.scalar("SELECT COUNT(*) FROM tickets WHERE cliente_id = :c", c=cliente_id)
-    return {**c, "preferencias": perfil.preferencias(cliente_id), "tickets_guardados": n}
+    prefs = perfil.preferencias(cliente_id)
+    trazas.paso("BD", f"Perfil de {cliente_id}: {len(prefs['intereses'])} gustos, {len(prefs['restricciones']) + len(prefs['alergias'])} "
+                      f"restricciones, {len(prefs['no_me_gusta'])} descartados, {n} tickets")
+    return {**c, "preferencias": prefs, "tickets_guardados": n}
 
 
 @app.post("/clientes/{cliente_id}/gustos")
@@ -164,15 +195,19 @@ def ingerir_ticket(body: TicketIn) -> dict:
                "precio_unitario": li.precio_unitario if li.precio_unitario is not None else float(cat.loc[li.producto_id, "precio"])}
               for li in body.lineas]
     total = round(sum(li["cantidad"] * li["precio_unitario"] for li in lineas), 2)
+    trazas.paso("TICKET", f"De {c['id']} ({c['nombre']}): {len(lineas)} productos, {total:.2f} €, pago {body.metodo_pago}, origen {body.origen}")
     # deduplicado: mismo cliente, tienda, minuto e importe = mismo ticket (tarjeta + foto del mismo ticket)
     h = hashlib.sha256(f"{c['id']}|{body.tienda_id}|{fecha:%Y-%m-%d %H:%M}|{total:.2f}".encode()).hexdigest()
     with db.engine().begin() as conn:
         if conn.execute(select(db.tickets.c.id).where(db.tickets.c.hash_dedupe == h)).first():
+            trazas.paso("DEDUPLICADO", "Ya estaba registrado (mismo cliente, tienda, minuto e importe): no se guarda dos veces")
             return {"duplicado": True, "mensaje": "Este ticket ya estaba registrado"}
         tid = f"W{datetime.now():%y%m%d%H%M%S%f}"[:24]
         conn.execute(insert(db.tickets).values(id=tid, cliente_id=c["id"], tienda_id=body.tienda_id, fecha=fecha, total=total,
                                                metodo_pago=body.metodo_pago, origen=body.origen, hash_dedupe=h))
         conn.execute(insert(db.lineas_ticket), [{"ticket_id": tid, **li} for li in lineas])
+    trazas.paso("GUARDADO", f"Ticket {tid} guardado en tickets + lineas_ticket")
+    trazas.paso("RESULTADO", "Las próximas recomendaciones ya cuentan con esta compra")
     return {"duplicado": False, "ticket_id": tid, "cliente_id": c["id"], "total": total,
             "reciclaje": reciclaje.resumen_ticket(tid)}
 
@@ -207,13 +242,6 @@ def cesta(cliente_id: str, body: CestaIn) -> dict:
     if "error" in r:
         raise HTTPException(400, r["error"])
     return r
-
-
-@app.get("/clientes/{cliente_id}/wrapped")
-def ver_wrapped(cliente_id: str, periodo: str | None = None, llm: bool = True) -> dict:
-    """periodo: '2026' (año), '2026-09' (mes) o vacío (último año). llm=false -> plantilla (instantáneo)."""
-    _cliente(cliente_id)
-    return wrapped.generar(cliente_id, periodo, usar_llm=llm)
 
 
 @app.get("/clientes/{cliente_id}/reciclaje")
@@ -280,7 +308,9 @@ def api_login(body: LoginIn) -> dict:
 
 @api.get("/productos")
 def api_productos(q: str = "") -> list:
-    return catalogo.buscar(q, 20) if q.strip() else []
+    r = catalogo.buscar(q, 20) if q.strip() else []
+    trazas.paso("BD", f"Catálogo: «{q}» -> {len(r)} productos" + (f" ({', '.join(p['nombre'] for p in r[:3])}...)" if r else ""))
+    return r
 
 
 @api.get("/clientes/{cliente_id}/perfil")
@@ -313,11 +343,6 @@ def api_cesta(cliente_id: str, body: CestaIn) -> dict:
     return cesta(cliente_id, body)
 
 
-@api.get("/clientes/{cliente_id}/wrapped")
-def api_wrapped(cliente_id: str, periodo: str | None = None, llm: bool = True) -> dict:
-    return ver_wrapped(cliente_id, periodo, llm)
-
-
 @api.get("/clientes/{cliente_id}/reciclaje")
 def api_reciclaje(cliente_id: str, ticket_id: str | None = None) -> dict:
     return ver_reciclaje(cliente_id, ticket_id)
@@ -339,6 +364,7 @@ def api_tickets(cliente_id: str, limite: int = 5) -> list:
                              JOIN productos p ON p.id = l.producto_id WHERE l.ticket_id = :t AND p.sensible = :f""", t=r.id, f=False)
         out.append({"id": r.id, "fecha": r.fecha.isoformat(), "tienda_id": r.tienda_id, "total": float(r.total),
                     "metodo_pago": r.metodo_pago, "origen": r.origen, "lineas": lin.to_dict(orient="records")})
+    trazas.paso("BD", f"Últimos {len(out)} tickets de {cliente_id}")
     return out
 
 
@@ -348,3 +374,26 @@ app.include_router(api)
 FRONTEND = ROOT.parent / "frontend"
 if FRONTEND.exists():
     app.mount("/", StaticFiles(directory=FRONTEND, html=True), name="frontend")
+
+
+def _banner() -> None:
+    if not trazas.ACTIVAS:
+        return
+    disp = [p for p in gateway.available_providers() if p != "mock"]
+    linea = trazas._c("verde", "=" * trazas.ANCHO)
+    print("\n".join([
+        "", linea,
+        "  " + trazas._c("verde", "DONA, no te abandona", True) + trazas._c("gris", "   -   servicio de IA listo"),
+        linea,
+        "  App web ........ " + trazas._c("", "http://localhost:8001", True) + trazas._c("gris", "   (o http://localhost:8080 con Spring)"),
+        "  Modelo ......... " + (trazas._c("magenta", ", ".join(disp)) if disp else trazas._c("amarillo", "ninguno: modo demo sin LLM")),
+        "  Base de datos .. " + settings.database_url.split("://")[0] + "   |   Recomendador: " + __import__("app.recsys.recommender", fromlist=["x"]).embeddings()[3],
+        "  " + trazas._c("gris", "Usa la app en el navegador: aquí verás todo lo que pasa por dentro."),
+        linea,
+    ]), flush=True)
+
+
+try:
+    _banner()
+except Exception as e:  # sin base de datos todavía (antes del seed): que no impida arrancar
+    print(f"Aviso: {e}")

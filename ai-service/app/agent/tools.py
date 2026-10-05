@@ -18,7 +18,6 @@ from app.perfil import perfil
 from app.perfil.intereses import INTERESES, RESTRICCIONES
 from app.recsys.recommender import recomendar
 from app.reciclaje import reciclaje
-from app.wrapped import wrapped
 
 registry = ToolRegistry()
 
@@ -125,15 +124,6 @@ def recomendaciones(ctx: ToolContext, tipo: str = "para_ti", n: int = 5) -> dict
 })
 def actualizar_gustos(ctx: ToolContext, me_gusta: list[str] | None = None, no_me_gusta: list[str] | None = None) -> dict:
     return perfil.actualizar_gustos(ctx.session_id, me_gusta, no_me_gusta)
-
-
-@registry.tool("mi_wrapped", "Resumen estilo Wrapped de las compras del cliente: producto obsesión, rachas, reciclaje...", {
-    "type": "object",
-    "properties": {"periodo": {"type": "string", "description": "'2026' (año), '2026-09' (mes) o vacío (último año)"}},
-})
-def mi_wrapped(ctx: ToolContext, periodo: str | None = None) -> dict:
-    w = wrapped.generar(ctx.session_id, periodo or None, usar_llm=False)
-    return {"titular": w["titular"], "tarjetas": w["tarjetas"]}
 
 
 @registry.tool("reciclaje", "A qué contenedor va el envase de un producto; sin producto, resume la última compra.", {

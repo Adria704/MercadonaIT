@@ -32,6 +32,7 @@ from typing import Any
 import httpx
 from pydantic import BaseModel, ValidationError
 
+from app import trazas
 from app.config import settings
 
 log = logging.getLogger("llm.gateway")
@@ -292,7 +293,6 @@ class MockProvider(BaseProvider):
 
     KEYWORD_TOOLS = [
         (("€", "euro", "pavos", "presupuesto"), "preparar_cesta"),
-        (("wrapped", "mi año", "resumen del año", "mi resumen"), "mi_wrapped"),
         (("recicl", "contenedor", "dónde tiro", "donde tiro", "tirar"), "reciclaje"),
         (("no me gusta", "odio", "me encanta", "me gusta"), "actualizar_gustos"),
         (("última vez", "ultima vez", "cuándo compré", "cuando compre", "cada cuánto", "cada cuanto"), "historial_producto"),
@@ -333,8 +333,6 @@ class MockProvider(BaseProvider):
                 args = {"tipo": "descubre" if ("descubr" in text or "nuevo" in text) else "para_ti"}
             elif chosen == "resumen_compras":
                 args = {"periodo": "año" if "año" in text else "mes"}
-            elif chosen == "mi_wrapped":
-                args = {}
             elif chosen == "preparar_cesta":
                 args = self._pedido(text)
             elif chosen is None and "buscar_productos" in tool_names:
@@ -418,8 +416,6 @@ class MockProvider(BaseProvider):
         if isinstance(data, dict) and "tickets" in data and isinstance(data["tickets"], list):
             t = data["tickets"][0] if data["tickets"] else None
             return head + (f"Tu última compra fue el {t['fecha']} ({t['total']:.2f} €, {len(t['lineas'])} productos)." if t else "No tienes tickets.")
-        if isinstance(data, dict) and "tarjetas" in data:
-            return head + "\n".join(f"• {c['titulo']}: {c['texto']}" for c in data["tarjetas"][:6])
         if isinstance(data, dict) and "contenedores" in data:
             parts = [f"{c['componente']} → {c['contenedor']}" for c in data["contenedores"]]
             return head + f"{data.get('producto', 'Tu compra')}: " + "; ".join(parts)
@@ -495,9 +491,11 @@ class LLMGateway:
 
         if settings.llm_mode == "replay":
             resp = self._cache_get(key) or self.mock.complete(messages, tools, system, max_tokens, temperature)
+            trazas.paso("LLM_OK", f"Respuesta grabada (modo replay, {resp.provider})")
             self._record(resp)
             return resp
         if settings.cache_read and (hit := self._cache_get(key)):
+            trazas.paso("LLM_OK", f"Respuesta reutilizada de la caché ({hit.provider})")
             self._record(hit)
             return hit
 
@@ -508,14 +506,22 @@ class LLMGateway:
             for attempt in range(2):
                 t0 = time.perf_counter()
                 try:
+                    if prov.name == "mock":
+                        trazas.paso("LLM", "Ningún modelo disponible: respondo en modo demo (sin IA generativa)")
+                    else:
+                        trazas.paso("LLM", f"Preguntando a {prov.name} ({prov.model})...")
                     resp = prov.complete(messages, tools, system, max_tokens, temperature)
                     resp.latency_ms = int((time.perf_counter() - t0) * 1000)
+                    if prov.name != "mock":
+                        tok = resp.usage.get("input_tokens", 0) + resp.usage.get("output_tokens", 0)
+                        trazas.paso("LLM_OK", f"{prov.name} respondió en {resp.latency_ms} ms ({tok} tokens)")
                     self._cache_put(key, resp)
                     self._record(resp)
                     return resp
                 except (ProviderError, httpx.HTTPError, KeyError, ValueError) as e:
                     msg = f"{prov.name} intento {attempt + 1}: {e}"
                     log.warning(msg)
+                    trazas.paso("LLM_FALLO", trazas.recortar(f"{prov.name} ha fallado ({e}); pruebo de nuevo o con el siguiente", 100))
                     errors.append(msg)
                     time.sleep(0.6 * (attempt + 1))
         self.stats["errors"] = (self.stats["errors"] + errors)[-20:]

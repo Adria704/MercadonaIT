@@ -1,6 +1,7 @@
 package com.example.demo.clientes;
 
 import com.example.demo.config.Json;
+import com.example.demo.config.Traza;
 import com.example.demo.dominio.Cliente;
 import com.example.demo.dominio.Preferencia;
 import com.example.demo.dominio.PreferenciaRepository;
@@ -35,7 +36,10 @@ public class ClienteController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, Object> cuerpo) {
         return servicio.identificar(Json.texto(cuerpo, "telefono", "telefono"), Json.texto(cuerpo, "tarjeta_token", "tarjetaToken"))
-                .map(c -> ResponseEntity.ok(aMapa(c)))
+                .map(c -> {
+                    Traza.paso("BASE DE DATOS", "Cliente encontrado: " + c.getId() + " (" + c.getNombre() + ")");
+                    return ResponseEntity.ok(aMapa(c));
+                })
                 .orElse(ResponseEntity.status(404).body(Map.of("error", "No hay ninguna cuenta con ese teléfono o tarjeta")));
     }
 

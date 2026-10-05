@@ -1,5 +1,6 @@
 package com.example.demo.clientes;
 
+import com.example.demo.config.Traza;
 import com.example.demo.dominio.Cliente;
 import com.example.demo.dominio.ClienteRepository;
 import com.example.demo.dominio.Preferencia;
@@ -66,6 +67,9 @@ public class ClienteService {
         restricciones.forEach(v -> prefs.add(new Preferencia(clienteId, "restriccion", v)));
         alergias.forEach(v -> prefs.add(new Preferencia(clienteId, "alergia", v)));
         preferencias.saveAll(prefs);
+        Traza.paso("BASE DE DATOS", "Cuenta " + id + " creada con " + intereses.size() + " gustos, "
+                + restricciones.size() + " dietas y " + alergias.size() + " alergias");
+        Traza.paso("IA", "Sin compras todavia: sus recomendaciones saldran de los gustos elegidos");
         return c;
     }
 

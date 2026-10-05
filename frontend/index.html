@@ -224,26 +224,6 @@ input{font:inherit;color:var(--ink)}
 .tk b{display:flex;justify-content:space-between}
 .tk small{color:var(--muted)}
 
-/* ---------- Wrapped (historias) ---------- */
-.stories{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;color:#fff;background:var(--brand-deep)}
-.stories.k1{background:var(--accent);color:var(--accent-ink)}
-.stories.k2{background:#0E2A1D;color:#fff}
-.stories.k3{background:var(--brand);color:var(--on-brand)}
-.stories .bars{display:flex;gap:4px;padding:14px 14px 0}
-.stories .bars i{flex:1;height:4px;border-radius:2px;background:currentColor;opacity:.3}
-.stories .bars i.on{opacity:1}
-.stories .x{position:absolute;top:26px;right:10px;width:48px;height:48px;display:grid;place-items:center;z-index:3}
-.stories .x svg{width:24px;height:24px}
-.story{flex:1;display:flex;flex-direction:column;justify-content:center;padding:30px 28px;animation:pop .45s cubic-bezier(.2,.8,.2,1)}
-@keyframes pop{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.story .pre{font-size:19px;font-weight:600}
-.story .big{font-family:var(--display);font-weight:800;font-size:clamp(64px,21vw,92px);line-height:.9;letter-spacing:-.045em;margin:10px 0 16px;overflow-wrap:anywhere}
-.story .big.long{font-size:clamp(38px,11vw,52px);line-height:.98;overflow-wrap:break-word;hyphens:auto}
-.story .post{font-size:19px;line-height:1.35;font-weight:500;max-width:17em}
-.stories .tap{position:absolute;top:70px;bottom:0;width:50%;z-index:2}
-.stories .tap.prev{left:0}.stories .tap.next{right:0}
-.stories .sig{padding:0 28px 26px;font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-.03em}
-
 /* ---------- Cesta (hoja) y aviso ---------- */
 .scrim{position:absolute;inset:0;background:rgba(5,20,12,.5);z-index:20;display:flex;align-items:flex-end}
 .sheet{width:100%;max-height:84%;background:var(--surface);border-radius:26px 26px 0 0;display:flex;flex-direction:column;animation:up .28s cubic-bezier(.2,.8,.2,1)}
@@ -294,7 +274,6 @@ const api = {
   chat: (id, mensaje) => post(`/clientes/${id}/chat`, {mensaje}),
   reset: id => post(`/clientes/${id}/chat/reset`, {}),
   cesta: (id, pedido) => post(`/clientes/${id}/cesta`, pedido),
-  wrapped: id => http(`/clientes/${id}/wrapped?llm=false`),
   perfil: id => http(`/clientes/${id}/perfil`),
   tickets: id => http(`/clientes/${id}/tickets?limite=5`),
   comprar: ticket => post('/tickets', ticket),
@@ -334,7 +313,7 @@ const TINTS = ['#E4572E','#00AB61','#8B5E3C','#FCB831','#2E86AB','#7B6CF6','#D72
 const HEIGHTS = ['h3','h2','h1','h2','h3','h1','h2','h2','h1','h3','h2','h1'];
 const TOOL_LABEL = {
   preparar_cesta: 'Ha preparado tu cesta', recomendaciones: 'Ha mirado tus gustos', resumen_compras: 'Ha sumado tus compras',
-  historial_producto: 'Ha revisado tu historial', ultimos_tickets: 'Ha abierto tus tickets', mi_wrapped: 'Ha preparado tu resumen',
+  historial_producto: 'Ha revisado tu historial', ultimos_tickets: 'Ha abierto tus tickets',
   reciclaje: 'Ha consultado el reciclaje', actualizar_gustos: 'Ha guardado tus gustos', buscar_productos: 'Ha buscado en el catálogo',
 };
 const ALERGENO = {gluten:'Gluten', lactosa:'Lactosa', huevo:'Huevo', pescado:'Pescado', crustaceos:'Crustáceos', frutos_secos:'Frutos secos', sesamo:'Sésamo'};
@@ -357,7 +336,7 @@ const IC = {
 const S = {
   cliente: store.get('dona_cliente'), screen: 'welcome', tab: 'inicio', loginErr: '', busy: false,
   reco: null, recoErr: '', q: '', results: null,
-  msgs: [], typing: false, cart: new Map(), sheet: false, stories: null, story: 0, donaView: 'chat',
+  msgs: [], typing: false, cart: new Map(), sheet: false, donaView: 'chat',
   perfil: null, tickets: null, intereses: null,
   onb: {tastes: new Set(), restr: new Set(), alerg: new Set(), nombre: '', telefono: ''},
 };
@@ -443,7 +422,7 @@ function vShell() {
       <button class="icon-btn" data-a="open-cart" aria-label="Mi cesta, ${c} productos">${IC.cart}${c ? `<span class="badge">${c}</span>` : ''}</button></header>
     <div class="view" id="view">${S.tab === 'inicio' ? vHome() : S.tab === 'dona' ? vChat() : S.tab === 'cuenta' ? vAccount() : vPlaceholder()}</div>
     <nav class="tabs" aria-label="Secciones">${tab('inicio', 'Inicio', IC.home)}${tab('categorias', 'Categorías', IC.grid)}${tab('dona', 'Dona', IC.dona, 'dona')}${tab('listas', 'Listas', IC.list)}${tab('cuenta', 'Cuenta', IC.user)}</nav>
-    ${S.sheet ? vCart() : ''}${S.stories ? vStory() : ''}`;
+    ${S.sheet ? vCart() : ''}`;
 }
 
 function vPlaceholder() {
@@ -495,7 +474,7 @@ function vHome() {
 }
 
 /* ---------- Dona (chat con la IA) ---------- */
-const STARTERS = ['30 € para una persona celíaca y dos veganas', '¿Qué me recomiendas?', '¿Cuánto llevo gastado este mes?', '¿Cuándo compré café la última vez?', 'Enséñame mi Wrapped'];
+const STARTERS = ['30 € para una persona celíaca y dos veganas', '¿Qué me recomiendas?', '¿Cuánto llevo gastado este mes?', '¿Cuándo compré café la última vez?'];
 function vChat() {
   const seg = `<div class="seg" role="tablist" aria-label="Dona">
       <button role="tab" aria-pressed="${S.donaView === 'chat'}" data-a="dona-view" data-id="chat">Chat</button>
@@ -515,7 +494,6 @@ function vLog() {
     if (m.tools && m.tools.length) out += `<div class="understood">${m.tools.map(t => `<span>${esc(t)}</span>`).join('')}</div>`;
     if (m.cesta) out += vTicket(m, i);
     if (m.cards && m.cards.length) out += `<div class="rows mini">${m.cards.slice(0, 5).map(p => row(p, p.motivo || '')).join('')}</div>`;
-    if (m.wrapped) out += `<div class="sugg"><button data-a="wrapped">Ver mi Wrapped en pantalla completa</button></div>`;
     return out;
   }).join('');
   if (S.msgs.length <= 1 && !S.typing) h += `<div class="sugg">${STARTERS.map(s => `<button data-a="say" data-t="${esc(s)}">${esc(s)}</button>`).join('')}</div>`;
@@ -582,7 +560,6 @@ function greet() {
 }
 async function say(text) {
   text = (text || '').trim(); if (!text || S.typing) return;
-  if (/wrapped|mi año|resumen del año/i.test(text)) { S.msgs.push({who: 'me', text}); refreshLog(); return openWrapped(true); }
   S.msgs.push({who: 'me', text}); S.typing = true; refreshLog();
   try {
     const r = await api.chat(S.cliente.id, text);
@@ -593,7 +570,6 @@ async function say(text) {
       tools: [...new Set(herramientas.map(t => TOOL_LABEL[t.nombre] || t.nombre))],
       cards: herramientas.flatMap(t => t.tarjetas || []),
       cesta: cestaPaso ? cestaPaso.cesta : null, pedido: cestaPaso ? cestaPaso.argumentos : null, fresh: true,
-      wrapped: herramientas.some(t => t.nombre === 'mi_wrapped'),
     });
     if (herramientas.some(t => t.nombre === 'actualizar_gustos')) S.reco = null;  // las recomendaciones cambiarán
   } catch (e) {
@@ -615,35 +591,6 @@ async function otraPropuesta(i) {
   S.typing = false; refreshLog();
 }
 
-/* ---------- Wrapped ---------- */
-async function openWrapped(fromChat) {
-  try {
-    const w = await api.wrapped(S.cliente.id);
-    if (!w.tarjetas || !w.tarjetas.length) {
-      if (fromChat) { S.msgs.push({who: 'dona', text: 'Aún no tienes compras suficientes para tu Wrapped. ¡Vuelve cuando hayas hecho alguna!'}); refreshLog(); }
-      else toast('Aún no hay compras para tu Wrapped');
-      return;
-    }
-    const st = [{pre: 'Así ha sido', big: w.periodo.replace(/^tu /, ''), post: 'en el súper. Toca para seguir.', long: true}];
-    w.tarjetas.forEach(t => {
-      const num = (t.texto.match(/\d+(?:[.,]\d+)?\s?%?/) || [null])[0];
-      st.push(num ? {pre: t.titulo, big: num.trim(), post: t.texto} : {pre: '', big: t.titulo, post: t.texto, long: true});
-    });
-    if (w.tarjeta_privada) st.push({pre: 'Solo para ti', big: (w.tarjeta_privada.texto.match(/[\d.,]+\s?€/) || ['—'])[0], post: w.tarjeta_privada.texto + ' Esta tarjeta no se comparte.'});
-    if (fromChat) { S.msgs.push({who: 'dona', text: w.titular, wrapped: true}); refreshLog(); }
-    S.stories = st; S.story = 0; render();
-  } catch (e) { toast('No se ha podido cargar tu Wrapped'); }
-}
-function vStory() {
-  const s = S.stories[S.story], k = S.story % 4;
-  return `<section class="stories k${k}" role="dialog" aria-label="Tu Wrapped">
-    <div class="bars">${S.stories.map((_, i) => `<i class="${i <= S.story ? 'on' : ''}"></i>`).join('')}</div>
-    <button class="x" data-a="story-close" aria-label="Cerrar">${IC.x}</button>
-    <button class="tap prev" data-a="story-prev" aria-label="Anterior"></button><button class="tap next" data-a="story-next" aria-label="Siguiente"></button>
-    <div class="story" key="${S.story}">${s.pre ? `<p class="pre">${esc(s.pre)}</p>` : ''}<p class="big ${s.long || String(s.big).length > 7 ? 'long' : ''}">${esc(s.big)}</p><p class="post">${esc(s.post)}</p></div>
-    <p class="sig">Dona</p></section>`;
-}
-
 /* ---------- Cuenta ---------- */
 function vAccount() {
   const p = S.perfil, c = S.cliente, titles = {};
@@ -663,8 +610,7 @@ function vAccount() {
         <div class="tk"><b><span>${new Date(t.fecha).toLocaleDateString('es-ES', {weekday: 'long', day: 'numeric', month: 'long'})}</span><span>${fmt(t.total)}</span></b>
         <small>${esc(t.lineas.slice(0, 4).map(l => l.nombre).join(', '))}${t.lineas.length > 4 ? '…' : ''}</small></div>`).join('') : '<p class="hint">Aún no tienes compras.</p>'}
     </div>
-    <div class="card"><button class="btn yellow" data-a="wrapped">Ver mi Wrapped</button>
-      <button class="btn ghost" data-a="logout" style="margin-top:10px">Cerrar sesión</button></div>
+    <div class="card"><button class="btn ghost" data-a="logout">Cerrar sesión</button></div>
   </div>`;
 }
 
@@ -721,7 +667,7 @@ async function entrar(telefono) {
   S.busy = false; render();
 }
 function resetCliente() {
-  Object.assign(S, {reco: null, recoErr: '', q: '', results: null, msgs: [], cart: new Map(), perfil: null, tickets: null, stories: null});
+  Object.assign(S, {reco: null, recoErr: '', q: '', results: null, msgs: [], cart: new Map(), perfil: null, tickets: null});
 }
 let searchT;
 function buscar(q) {
@@ -788,10 +734,6 @@ document.addEventListener('click', async e => {
       m.added = true; toast(`${m.cesta.lineas.length} productos añadidos a tu cesta`); refreshLog(); return updateBadge();
     }
     case 'again': return otraPropuesta(+el.dataset.m);
-    case 'wrapped': return openWrapped(false);
-    case 'story-next': if (S.story < S.stories.length - 1) { S.story++; return render(); } S.stories = null; return render();
-    case 'story-prev': if (S.story > 0) S.story--; return render();
-    case 'story-close': S.stories = null; return render();
     case 'open-cart': S.sheet = true; return render();
     case 'close-cart': S.sheet = false; return render();
     case 'qty': {
@@ -812,12 +754,6 @@ document.addEventListener('input', e => {
   if (e.target.id === 'q') buscar(e.target.value);
   if (e.target.id === 'onb-nombre') S.onb.nombre = e.target.value;
   if (e.target.id === 'onb-tel') S.onb.telefono = e.target.value;
-});
-document.addEventListener('keydown', e => {
-  if (!S.stories) return;
-  if (e.key === 'Escape') { S.stories = null; render(); }
-  if (e.key === 'ArrowRight') document.querySelector('[data-a="story-next"]').click();
-  if (e.key === 'ArrowLeft') document.querySelector('[data-a="story-prev"]').click();
 });
 function updateBadge() {
   const b = document.querySelector('[data-a="open-cart"]'); if (!b) return;

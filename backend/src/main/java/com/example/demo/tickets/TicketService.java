@@ -1,6 +1,7 @@
 package com.example.demo.tickets;
 
 import com.example.demo.config.Json;
+import com.example.demo.config.Traza;
 import com.example.demo.dominio.Cliente;
 import com.example.demo.dominio.ClienteRepository;
 import com.example.demo.dominio.LineaTicket;
@@ -63,6 +64,8 @@ public class TicketService {
         Cliente cliente = (clienteId != null ? clientes.findById(clienteId)
                 : telefono != null ? clientes.findByTelefono(telefono) : clientes.findByTarjetaToken(String.valueOf(tarjeta)))
                 .orElseThrow(() -> new IllegalArgumentException("Ticket sin cliente asociado (cliente, teléfono o tarjeta desconocidos)"));
+        Traza.paso("BASE DE DATOS", "Cliente identificado: " + cliente.getId() + " ("
+                + (clienteId != null ? "id" : telefono != null ? "telefono" : "token de tarjeta") + ")");
 
         String tienda = valor(Json.texto(cuerpo, "tienda_id", "tiendaId"), "T01");
         String fechaTxt = Json.texto(cuerpo, "fecha", "fecha");
@@ -89,15 +92,20 @@ public class TicketService {
         }
         total = Math.round(total * 100.0) / 100.0;
 
+        Traza.paso("TICKET DIGITAL", nuevas.size() + " lineas, total " + String.format(Locale.ROOT, "%.2f", total)
+                + " EUR, pago " + metodoPago + ", origen " + origen);
         String hash = sha256(cliente.getId() + "|" + tienda + "|" + fecha.format(MINUTO) + "|" + String.format(Locale.ROOT, "%.2f", total));
         Map<String, Object> r = new LinkedHashMap<>();
         if (tickets.existsByHashDedupe(hash)) {
+            Traza.paso("DEDUPLICADO", "Ya existia (mismo cliente, tienda, minuto e importe): no se guarda dos veces");
             r.put("duplicado", true);
             r.put("mensaje", "Este ticket ya estaba registrado");
             return r;
         }
         tickets.save(new Ticket(idTicket, cliente.getId(), tienda, fecha, total, metodoPago, origen, hash));
         lineas.saveAll(nuevas);
+        Traza.paso("BASE DE DATOS", "Guardado ticket " + idTicket + " en tickets + lineas_ticket");
+        Traza.paso("IA", "Las proximas recomendaciones ya incluyen esta compra");
 
         r.put("duplicado", false);
         r.put("ticket_id", idTicket);

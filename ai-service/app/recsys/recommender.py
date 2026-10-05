@@ -22,6 +22,7 @@ from functools import lru_cache
 import numpy as np
 import pandas as pd
 
+from app import trazas
 from app.config import hoy, settings
 from app.data import catalogo
 from app.db import query_df
@@ -116,6 +117,12 @@ def contexto(cliente_id: str) -> dict:
             boost[p] = max(boost.get(p, 0.0), min(peso, 1.5))
     beta = 0.15 + 0.6 * (1 - alpha)
     afinidad = {pid: float(scores[i]) + beta * boost.get(pid, 0.0) for i, pid in enumerate(ids)}
+    gustos = ", ".join(INTERESES[i]["titulo"] for i in prefs["intereses"] if i in INTERESES) or "ninguno"
+    filtros = prefs["restricciones"] + [f"sin {a}" for a in prefs["alergias"]]
+    trazas.paso("BD", f"Historial de {cliente_id}: {n_tickets} compras, {len(peso_compra)} productos distintos")
+    trazas.paso("BD", trazas.recortar(f"Gustos: {gustos}" + (f" | Filtros: {', '.join(filtros)}" if filtros else "")
+                                      + (f" | Descartados: {len(prefs['no_me_gusta'])}" if prefs["no_me_gusta"] else ""), 100))
+    trazas.paso("MODELO", f"{metodo}: pesan {alpha:.0%} sus compras y {1 - alpha:.0%} sus gustos iniciales")
     return {"E": E, "ids": ids, "idx": idx, "metodo": metodo, "cat": cat, "prefs": prefs, "compras": compras,
             "n_tickets": n_tickets, "alpha": alpha, "u": u, "vec_interes": vec_interes, "peso_compra": peso_compra,
             "boost": boost, "afinidad": afinidad}
@@ -218,6 +225,8 @@ def recomendar(cliente_id: str, n: int = 6) -> dict:
         top = [top[i] for i in orden]
     descubre = elegir(top, max(3, n // 2), 1, set(habituales) | {cat.loc[p, "clave"] for p in para_ti})
 
+    trazas.paso("RESULTADO", f"{len(lo_de_siempre)} de siempre ({sum(1 for x in lo_de_siempre if x['toca_reponer'])} toca reponer), "
+                             f"{len(para_ti)} para ti, {len(descubre)} por descubrir")
     return {
         "lo_de_siempre": lo_de_siempre,
         "para_ti": [{**catalogo.producto(p), "motivo": motivo(p, False)} for p in para_ti],

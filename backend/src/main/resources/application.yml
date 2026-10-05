@@ -2,6 +2,9 @@ server:
   port: 8080
 
 spring:
+  output:
+    ansi:
+      enabled: always   # colores también en los logs de Spring (never si la consola no los soporta)
   web:
     resources:
       # La app web (carpeta frontend/ del proyecto) se sirve en http://localhost:8080/
@@ -25,5 +28,8 @@ ia:
 
 # Orígenes del frontend React en desarrollo (Vite: 5173, Create React App: 3000)
 app:
+  # Colores en las trazas de la consola. Si ves caracteres raros como "[32m", pon false
+  trazas:
+    color: true
   cors:
     origenes: http://localhost:5173,http://localhost:3000

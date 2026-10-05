@@ -17,6 +17,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from app import trazas
 from app.config import settings
 from app.llm.gateway import LLMGateway
 
@@ -72,6 +73,7 @@ class Agent:
 
     def run(self, session_id: str, user_message: str, images: list[dict] | None = None) -> dict:
         msgs = self.sessions.setdefault(session_id, [])
+        trazas.paso("APP", f"Mensaje de {session_id}: «{trazas.recortar(user_message, 80)}»")
         content: Any = user_message
         if images:
             content = [*images, {"type": "text", "text": user_message}]
@@ -84,6 +86,7 @@ class Agent:
             resp = self.gw.complete(self._trim(msgs), tools=self.registry.specs(), system=system)
             providers.add(resp.provider)
             if not resp.tool_calls:
+                trazas.paso("RESPUESTA", f"«{trazas.recortar(resp.text, 85)}»")
                 msgs.append({"role": "assistant", "content": resp.text})
                 trace.append({"tipo": "respuesta", "proveedor": resp.provider, "cache": resp.cached})
                 break
@@ -93,7 +96,10 @@ class Agent:
                 trace.append({"tipo": "pensamiento", "texto": resp.text})
             for tc in resp.tool_calls:
                 ts = time.perf_counter()
+                args = ", ".join(f"{k}={v}" for k, v in tc.arguments.items())
+                trazas.paso("HERRAMIENTA", trazas.recortar(f"El agente decide usar {tc.name}({args})", 100))
                 result = self.registry.call(tc.name, tc.arguments, ctx)
+                trazas.paso("RESULTADO", f"{tc.name}: {_summary(result)} ({int((time.perf_counter() - ts) * 1000)} ms)")
                 trace.append({"tipo": "herramienta", "nombre": tc.name, "argumentos": tc.arguments,
                               "resultado_resumen": _summary(result), "ms": int((time.perf_counter() - ts) * 1000),
                               "proveedor": resp.provider, "tarjetas": _cards(result),

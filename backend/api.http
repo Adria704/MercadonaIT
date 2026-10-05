@@ -72,11 +72,6 @@ Content-Type: application/json
 
 {"no_me_gusta": ["pescado"]}
 
-### Wrapped (llm=false = plantilla instantánea)
-GET {{api}}/clientes/C0001/wrapped?llm=false
-###
-GET {{api}}/clientes/C0001/wrapped?periodo=2026-09
-
 ### Reciclaje de los últimos 30 días / de un producto
 GET {{api}}/clientes/C0001/reciclaje
 ###

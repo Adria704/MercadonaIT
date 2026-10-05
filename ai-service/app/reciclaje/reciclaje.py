@@ -1,6 +1,6 @@
 """Reciclaje: a qué contenedor va cada envase de lo que has comprado.
 
-Funcionalidad secundaria (no debe eclipsar la idea principal): un resumen por compra, una tarjeta en el Wrapped
+Funcionalidad secundaria (no debe eclipsar la idea principal): un resumen por compra
 y la pregunta "¿dónde tiro esto?" en el asistente.
 Contenedores en España: amarillo (plástico, latas, briks), azul (papel y cartón), verde (vidrio),
 orgánico (marrón, donde exista), resto (gris) y punto limpio. Las normas cambian según el municipio.

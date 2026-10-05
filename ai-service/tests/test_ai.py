@@ -48,13 +48,6 @@ def test_no_me_gusta_excluye():
     assert not any("Pizza" in p["nombre"] for p in r["para_ti"] + r["descubre"])
 
 
-def test_wrapped_privacidad():
-    w = client.get("/clientes/C0001/wrapped", params={"llm": False}).json()
-    textos = " ".join(t["texto"] for t in w["compartible"]["tarjetas"])
-    assert "€" not in textos and "Preservativos" not in str(w["estadisticas"])
-    assert w["tarjeta_privada"]["texto"].count("€") == 1
-
-
 def test_marcas_mercadona():
     marcas = {p["marca"] for q in ("leche", "champú", "detergente", "plátano") for p in client.get("/productos", params={"q": q}).json()["productos"]}
     assert {"Hacendado", "Deliplus", "Bosque Verde"} <= marcas and "Casa Clara" not in marcas

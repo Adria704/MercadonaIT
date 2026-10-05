@@ -4,7 +4,7 @@
 
 ```
                  ┌──────────────────────────────┐
-  Cliente  ───►  │  App web de Dona (HTML + JS)  │  alta tipo Pinterest, inicio, chat, cesta, Wrapped
+  Cliente  ───►  │  App web de Dona (HTML + JS)  │  alta tipo Pinterest, inicio, chat, cesta
                  └──────────────┬───────────────┘
                                 │ REST
                  ┌──────────────▼───────────────┐
@@ -24,7 +24,7 @@
           └──────────────────┘   └─────────────────────────────┘
 ```
 
-**Flujo:** el cliente paga → se genera el ticket digital asociado a su tarjeta o teléfono → el backend lo valida, deduplica y lo guarda en PostgreSQL → el servicio de IA lo usa para recomendaciones, asistente y Wrapped → el backend lo expone al frontend. El frontend **solo habla con el backend** (puerto 8080); el backend reenvía las peticiones de IA al servicio Python (puerto 8001).
+**Flujo:** el cliente paga → se genera el ticket digital asociado a su tarjeta o teléfono → el backend lo valida, deduplica y lo guarda en PostgreSQL → el servicio de IA lo usa para las recomendaciones, el asistente y las cestas → el backend lo expone al frontend. El frontend **solo habla con el backend** (puerto 8080); el backend reenvía las peticiones de IA al servicio Python (puerto 8001).
 
 ## Por qué cada tecnología
 
@@ -40,10 +40,10 @@
 
 ### Ingesta del ticket digital (y Spring Batch como siguiente paso)
 - Hoy, cada ticket entra por `POST /api/tickets`: el backend identifica al cliente por teléfono o token de tarjeta, calcula el total, **deduplica** (mismo cliente + tienda + minuto + importe = mismo ticket, por ejemplo tarjeta + foto del mismo ticket) y lo guarda línea a línea.
-- En producción los tickets llegan en volumen, así que es un problema de **procesamiento por lotes**: **Spring Batch** aportaría lectura por *chunks*, reintentos, reanudación si un job falla a mitad y trazabilidad. Jobs previstos: ingesta masiva, reentrenar los embeddings por la noche (y avisar a `/admin/recargar-modelo`) y precalcular los Wrapped mensuales.
+- En producción los tickets llegan en volumen, así que es un problema de **procesamiento por lotes**: **Spring Batch** aportaría lectura por *chunks*, reintentos, reanudación si un job falla a mitad y trazabilidad. Jobs previstos: ingesta masiva, y reentrenar los embeddings por la noche (avisando después a `/admin/recargar-modelo`).
 
 ### Base de datos: PostgreSQL
-- Los tickets son datos **relacionales** por naturaleza: cliente → tickets → líneas → productos. Las consultas del Wrapped (agregados, rachas, percentiles) son SQL puro.
+- Los tickets son datos **relacionales** por naturaleza: cliente → tickets → líneas → productos. Las consultas sobre el historial (gasto por sección, cada cuánto se compra cada producto) son SQL puro.
 - Transacciones ACID: un ticket se guarda entero o no se guarda.
 - `JSONB` para datos flexibles (componentes del envase para reciclaje) sin perder el modelo relacional.
 - Escala de sobra y, si hiciera falta búsqueda vectorial, la extensión `pgvector` permite guardar los embeddings en la misma base de datos.
@@ -65,11 +65,11 @@
 
 ## Decisiones de diseño de la IA
 
-1. **El LLM orquesta, el código calcula.** Cifras, fechas, aptitud de productos (alergias, vegano, sin gluten) y estadísticas del Wrapped se calculan en código. El LLM solo decide qué herramienta usar y redacta. Así se evitan alucinaciones en lo importante.
+1. **El LLM orquesta, el código calcula.** Cifras, fechas, aptitud de productos (alergias, vegano, sin gluten) y las cestas se calculan en código. El LLM solo decide qué herramienta usar y redacta. Así se evitan alucinaciones en lo importante.
 2. **Adaptación progresiva:** `vector_cliente = (1 − α)·gustos_iniciales + α·compras`, con `α = tickets / (tickets + 8)`. Con la cuenta recién creada manda el onboarding; con 8 compras, mitad y mitad; con muchas, mandan las compras. Los intereses declarados siempre conservan un empujón mínimo.
 3. **Siempre hay algo nuevo:** la lista "descubre" solo incluye productos nunca comprados, de categorías distintas y con un componente aleatorio diario.
 4. **Explicable:** cada recomendación incluye su motivo ("porque sueles comprar X", "porque te interesa Vida fitness").
-5. **Privacidad por diseño:** token de tarjeta en vez del número, productos sensibles excluidos del Wrapped y de las recomendaciones, Wrapped compartible sin importes, comparativas solo con al menos 50 hogares y pantalla de transparencia (`/clientes/{id}/perfil`).
+5. **Privacidad por diseño:** token de tarjeta en vez del número, productos sensibles excluidos de las recomendaciones y las cestas, y pantalla de transparencia (`/clientes/{id}/perfil`).
 
 ## Contrato entre componentes
 

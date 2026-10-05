@@ -1,5 +1,6 @@
 package com.example.demo.tickets;
 
+import com.example.demo.config.Traza;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,7 @@ public class TicketController {
      * Registra un ticket digital. Cuerpo:
      * {"cliente_id": "C0001" (o "telefono" / "tarjeta_token"), "tienda_id": "T02", "metodo_pago": "tarjeta", "origen": "ticket_digital",
      *  "fecha": "2026-10-05T19:30:00", "lineas": [{"producto_id": "P0031", "cantidad": 2}]}
-     * Después, las recomendaciones y el Wrapped ya lo tienen en cuenta (el servicio de IA lee la misma BD).
+     * Después, las recomendaciones ya lo tienen en cuenta (el servicio de IA lee la misma BD).
      * Envases de este ticket: GET /api/clientes/{id}/reciclaje?ticket_id=...
      */
     @PostMapping("/tickets")
@@ -35,6 +36,7 @@ public class TicketController {
             Map<String, Object> r = servicio.registrar(cuerpo);
             return ResponseEntity.status(Boolean.TRUE.equals(r.get("duplicado")) ? 200 : 201).body(r);
         } catch (IllegalArgumentException | DateTimeParseException | ClassCastException e) {
+            Traza.paso("ERROR", "Ticket rechazado: " + e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", String.valueOf(e.getMessage())));
         }
     }
@@ -48,6 +50,8 @@ public class TicketController {
     /** Misma consulta con la ruta que definió el equipo al principio (GET /api/tickets/{clienteId}). */
     @GetMapping("/tickets/{clienteId}")
     public List<Map<String, Object>> historial(@PathVariable String clienteId) {
-        return servicio.ultimos(clienteId, 20);
+        List<Map<String, Object>> r = servicio.ultimos(clienteId, 20);
+        Traza.paso("BASE DE DATOS", r.size() + " tickets recuperados de PostgreSQL");
+        return r;
     }
 }

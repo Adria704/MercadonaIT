@@ -9,7 +9,7 @@ from datetime import datetime
 
 from sqlalchemy import delete, insert, select, text
 
-from app import db
+from app import db, trazas
 from app.data import catalogo
 from app.data.text import normalize
 from app.perfil.intereses import ALERGENOS, INTERESES, RESTRICCIONES
@@ -138,4 +138,7 @@ def actualizar_gustos(cliente_id: str, me_gusta: list[str] | None = None, no_me_
                 c.execute(delete(db.feedback).where((db.feedback.c.cliente_id == cliente_id) & (db.feedback.c.producto_id == pid)))
                 c.execute(insert(db.feedback).values(cliente_id=cliente_id, producto_id=pid, tipo=tipo, fecha=datetime.now()))
             cambios.append({"producto": prods[0]["nombre"], "me_gusta": positivo})
+    for ch in cambios:
+        que = ch.get("interes") or ch.get("producto") or f"{ch.get('grupo')} ({ch.get('productos')} productos)"
+        trazas.paso("GUSTOS", f"{'Le gusta' if ch['me_gusta'] else 'No le gusta'}: {que} -> guardado en feedback/preferencias")
     return {"actualizado": bool(cambios), "cambios": cambios}

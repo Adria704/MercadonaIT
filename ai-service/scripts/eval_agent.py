@@ -16,7 +16,6 @@ GOLDEN = [
     ("¿Cuándo fue la última vez que compré café?", "historial_producto"),
     ("¿Cada cuánto compro plátanos?", "historial_producto"),
     ("¿Qué compré en mi último ticket?", "ultimos_tickets"),
-    ("Enséñame mi resumen del año", "mi_wrapped"),
     ("¿En qué contenedor tiro el brik de leche?", "reciclaje"),
     ("No me gusta nada el pescado", "actualizar_gustos"),
     ("¿Tenéis hummus?", "buscar_productos"),
